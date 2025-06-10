@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Categorías</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style> 
+        body { font-family: 'Inter', sans-serif; }
+        form input { display: block; width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid #D1D5DB; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-900">Gestión de Categorías</h1>
+            <a href="{% url 'dashboard' %}" class="text-sm font-medium text-gray-600 hover:text-indigo-500">&larr; Volver al Dashboard</a>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2">
+            <div class="bg-white shadow overflow-hidden rounded-md">
+                <ul role="list" class="divide-y divide-gray-200">
+                    {% for categoria in categorias %}
+                    <li class="px-6 py-4 flex items-center justify-between">
+                        <p class="text-sm font-medium text-gray-900">{{ categoria.nombre }}</p>
+                        <div class="space-x-4">
+                            <a href="{% url 'editar_categoria' categoria.id %}" class="text-sm font-medium text-indigo-600 hover:text-indigo-900">Editar</a>
+                            <form action="{% url 'eliminar_categoria' categoria.id %}" method="post" class="inline" onsubmit="return confirm('¿Seguro que quieres eliminar esta categoría? Los productos asociados quedarán sin categoría.');">
+                                {% csrf_token %}
+                                <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-900">Eliminar</button>
+                            </form>
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li class="px-6 py-4 text-center text-gray-500">No hay categorías registradas.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="lg:col-span-1">
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-lg font-medium text-gray-900 mb-4">Añadir Nueva Categoría</h2>
+                {% if messages %}{% for message in messages %}<div class="mb-4 p-4 text-sm rounded-lg bg-green-100 text-green-700">{{ message }}</div>{% endfor %}{% endif %}
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="w-full mt-2 bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700">Añadir</button>
+                </form>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

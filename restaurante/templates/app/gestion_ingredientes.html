@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Ingredientes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Inter', sans-serif; } </style>
+</head>
+<body class="bg-gray-50">
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-900">Gestión de Ingredientes</h1>
+            <div>
+                <a href="{% url 'dashboard' %}" class="text-sm font-medium text-gray-600 hover:text-indigo-500 mr-4">&larr; Volver al Dashboard</a>
+                <a href="{% url 'crear_ingrediente' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">Añadir Ingrediente</a>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        {% if messages %}
+            {% for message in messages %}
+            <div class="mb-4 p-4 text-sm rounded-lg bg-green-100 text-green-700" role="alert">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        <div class="bg-white shadow overflow-hidden rounded-md">
+            <ul role="list" class="divide-y divide-gray-200">
+                {% for ingrediente in ingredientes %}
+                <li class="px-6 py-4 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">{{ ingrediente.nombre }}</p>
+                        <p class="text-sm text-gray-500">${{ ingrediente.precio }}</p>
+                    </div>
+                    <div class="space-x-4">
+                        <a href="{% url 'editar_ingrediente' ingrediente.id %}" class="text-sm font-medium text-indigo-600 hover:text-indigo-900">Editar</a>
+                        <form action="{% url 'eliminar_ingrediente' ingrediente.id %}" method="post" class="inline" onsubmit="return confirm('¿Seguro que quieres eliminar este ingrediente?');">
+                            {% csrf_token %}
+                            <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-900">Eliminar</button>
+                        </form>
+                    </div>
+                </li>
+                {% empty %}
+                <li class="px-6 py-4 text-center text-gray-500">No hay ingredientes registrados.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </main>
+</body>
+</html>
+

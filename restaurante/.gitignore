@@ -1,0 +1,27 @@
+# Ignorar archivos de Python y Django
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Base de datos SQLite
+*.sqlite3
+db.sqlite3
+
+# Archivos del entorno virtual
+env/
+venv/
+.env
+
+# Archivos y carpetas temporales
+*.log
+*.tmp
+*.bak
+
+# VSCode y sistema
+.vscode/
+.DS_Store
+
+# Archivos estáticos y media generados
+/staticfiles/
+/media/

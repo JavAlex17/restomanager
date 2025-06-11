@@ -182,21 +182,44 @@ def crear_producto_view(request):
     return render(request, 'app/producto_form.html', {'form': form, 'titulo': 'Añadir Nuevo Producto'})
 
 
+
 @staff_required
 def editar_producto_view(request, producto_id):
-    """Vista para editar un producto existente (Update)."""
     producto = get_object_or_404(Producto, id=producto_id)
-    if request.method == 'POST':
-        form = ProductoForm(request.POST, request.FILES, instance=producto)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Producto actualizado exitosamente.')
-            return redirect('gestion_productos')
-    else:
-        form = ProductoForm(instance=producto)
-    
-    return render(request, 'app/producto_form.html', {'form': form, 'titulo': 'Editar Producto'})
 
+    if request.method == 'POST':
+        # Obtener datos desde POST
+        nombre = request.POST.get('nombre')
+        categoria_id = request.POST.get('categoria')
+        precio = request.POST.get('precio')
+        disponible = request.POST.get('disponible') == 'on'  # checkbox
+
+        # Actualizar campos
+        producto.nombre = nombre
+        producto.precio = precio if precio else producto.precio
+
+        # Categoria: si viene id válido
+        if categoria_id:
+            from app.models import Categoria
+            categoria = Categoria.objects.filter(id=categoria_id).first()
+            producto.categoria = categoria
+        else:
+            producto.categoria = None
+
+        producto.disponible = disponible
+
+        producto.save()
+
+        messages.success(request, 'Producto actualizado exitosamente.')
+        return redirect('gestion_productos')
+
+    # Si acceden con GET, podrías redirigir o mostrar algo
+    return redirect('gestion_productos')
+
+def gestion_productos_view(request):
+    productos = Producto.objects.all()
+    categorias = Categoria.objects.all()
+    return render(request, 'app/gestion_productos.html', {'productos': productos, 'categorias': categorias})
 
 @staff_required
 def eliminar_producto_view(request, producto_id):
@@ -271,7 +294,19 @@ def gestion_categorias_view(request):
         'form': form
     }
     return render(request, 'app/gestion_categorias.html', context)
+from django.http import JsonResponse
+from .models import Categoria
 
+def obtener_categorias_json(request):
+    categorias = Categoria.objects.all().values('id', 'nombre')
+    return JsonResponse({'categorias': list(categorias)})
+def productos_view(request):
+    categorias = Categoria.objects.all()
+    productos = Producto.objects.all()
+    return render(request, 'productos.html', {
+        'productos': productos,
+        'categorias': categorias
+    })
 @staff_required
 def editar_categoria_view(request, categoria_id):
     """Vista para editar el nombre de una categoría."""

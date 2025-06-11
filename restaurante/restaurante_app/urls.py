@@ -17,6 +17,7 @@ urlpatterns = [
     path('dashboard/productos/nuevo/', views.crear_producto_view, name='crear_producto'),
     path('dashboard/productos/editar/<int:producto_id>/', views.editar_producto_view, name='editar_producto'),
     path('dashboard/productos/eliminar/<int:producto_id>/', views.eliminar_producto_view, name='eliminar_producto'),
+    
 
     path('dashboard/ingredientes/', views.gestion_ingredientes_view, name='gestion_ingredientes'),
     path('dashboard/ingredientes/nuevo/', views.crear_ingrediente_view, name='crear_ingrediente'),
@@ -26,6 +27,9 @@ urlpatterns = [
     path('dashboard/categorias/', views.gestion_categorias_view, name='gestion_categorias'),
     path('dashboard/categorias/editar/<int:categoria_id>/', views.editar_categoria_view, name='editar_categoria'),
     path('dashboard/categorias/eliminar/<int:categoria_id>/', views.eliminar_categoria_view, name='eliminar_categoria'),
+    path('api/categorias/', views.obtener_categorias_json, name='api_obtener_categorias'),
+
+    
     
     path('pedido/anadir/<int:producto_id>/', views.anadir_al_pedido, name='anadir_al_pedido'),
     path('pedido/', views.ver_pedido, name='ver_pedido'),

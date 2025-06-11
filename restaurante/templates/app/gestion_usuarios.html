@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -18,36 +19,104 @@
 </head>
 <body class="bg-gray-50">
 
-    <header class="bg-white shadow-sm">
-        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-gray-900">Gestión de Usuarios</h1>
-            <a href="{% url 'dashboard' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200">
-                &larr; Volver al Dashboard
-            </a>
+    <header class="bg-[#353535] shadow-sm relative"> 
+        <div class="w-full mx-auto py-2 px-0 flex items-center justify-between relative">
+            <!-- Logo -->
+            <div class="flex items-center ml-[-12px]">
+                <img src="{% static 'img/imagelogo.png' %}" alt="Logo" class="h-14 w-45">
+            </div>
+
+            <!-- Título centrado -->
+            <h1 class="absolute left-1/2 transform -translate-x-1/2 text-xl font-bold text-white">
+                Gestión de Usuarios
+            </h1>
+
+            <!-- Menú de usuario y enlace volver -->
+            <div class="flex items-center space-x-4 mr-5">
+                <a href="{% url 'dashboard' %}" class="flex items-center text-white text-sm hover:text-gray-300">
+                    <!-- Icono Home -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.707 1.293a1 1 0 00-1.414 0l-8 8A1 1 0 002 10h1v7a1 1 0 001 1h4a1 1 0 001-1v-4h2v4a1 1 0 001 1h4a1 1 0 001-1v-7h1a1 1 0 00.707-1.707l-8-8z" />
+                    </svg>
+                    Volver
+                </a>
+
+                <!-- Usuario -->
+                <button id="userMenuButton" class="flex items-center space-x-2 text-white hover:text-gray-200 focus:outline-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 2a4 4 0 100 8 4 4 0 000-8zM2 16a8 8 0 1116 0H2z" clip-rule="evenodd" />
+                    </svg>
+                    <span class="text-sm font-medium">{{ user.username }}</span>
+                </button>
+
+                <!-- Menú desplegable usuario -->
+                <div id="userDropdown" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg py-2 z-50">
+                    <form action="{% url 'logout' %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
+                            </svg>
+                            Cerrar sesión
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     </header>
 
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+            
         <!-- Columna de la Lista de Usuarios -->
         <div class="lg:col-span-2">
             <div class="bg-white shadow overflow-hidden rounded-md">
+                <h1 class="text-center font-bold text-xl mb-4 p-3 rounded" style="background-color: #F0A202; color: white;">
+                    Listado de usuarios
+                </h1>
                 <ul role="list" class="divide-y divide-gray-200">
                     {% for usuario in usuarios %}
                     <li class="px-6 py-4">
                         <div class="flex items-center justify-between">
-                            <div class="flex items-center">
+                            <div class="flex items-center space-x-3">
+                                <!-- Icono según rol -->
+                                {% if usuario.get_rol_display == "Encargado" %}
+                                    <!-- Icono genérico usuario -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                    </svg>
+                                {% elif usuario.get_rol_display == "Mesa" %}
+                                    <!-- Icono mesa (igual que antes) -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <rect x="3" y="8" width="18" height="8" stroke="currentColor" stroke-width="2" rx="2" ry="2" />
+                                        <line x1="6" y1="16" x2="6" y2="20" stroke="currentColor" stroke-width="2" />
+                                        <line x1="18" y1="16" x2="18" y2="20" stroke="currentColor" stroke-width="2" />
+                                    </svg>
+                                {% else %}
+                                    <!-- Icono genérico círculo -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <circle cx="12" cy="12" r="10" stroke-width="2" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h8" />
+                                    </svg>
+                                {% endif %}
+
                                 <span class="text-sm font-medium text-gray-900">{{ usuario.username }}</span>
                                 <span class="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                     {{ usuario.get_rol_display }}
                                 </span>
                             </div>
+
                             <div>
-                                <!-- El formulario de eliminación es necesario para usar el método POST -->
-                                <form action="{% url 'eliminar_usuario' user_id=usuario.id %}" method="post" class="inline" onsubmit="return confirm('¿Estás seguro de que quieres eliminar a {{ usuario.username }}?');">
-                                    {% csrf_token %}
-                                    <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-900">Eliminar</button>
-                                </form>
+                            <form action="{% url 'eliminar_usuario' user_id=usuario.id %}" method="post" class="inline eliminar-form">
+                            {% csrf_token %}
+                            <button type="button" class="text-red-600 hover:text-red-900 flex items-center space-x-1 btn-eliminar">
+                                <!-- Aquí tu icono basurero -->
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M9 6v12a2 2 0 002 2h2a2 2 0 002-2V6M10 10v6M14 10v6M5 6l1-2h12l1 2" />
+                                </svg>
+                                <span class="sr-only">Eliminar</span>
+                            </button>
+                            </form>
+
                             </div>
                         </div>
                     </li>
@@ -55,15 +124,20 @@
                     <li class="px-6 py-4 text-center text-gray-500">No hay otros usuarios registrados.</li>
                     {% endfor %}
                 </ul>
+                <!-- Contador total de usuarios -->
+                <div class="p-4 text-center text-sm text-gray-600 font-semibold">
+                    Total de usuarios registrados: {{ usuarios|length }}
+                </div>
             </div>
         </div>
 
         <!-- Columna del Formulario para Crear Usuario -->
         <div class="lg:col-span-1">
             <div class="bg-white shadow rounded-lg p-6">
-                <h2 class="text-lg font-medium text-gray-900 mb-4">Añadir Nuevo Usuario</h2>
+                <h2 class="text-lg font-medium text-white mb-4 text-center p-3 rounded" style="background-color: #848C8E;">
+                    Añadir Nuevo Usuario
+                </h2>
                 
-                <!-- Mostramos mensajes de éxito o error -->
                 {% if messages %}
                     {% for message in messages %}
                     <div class="mb-4 p-4 text-sm rounded-lg {% if message.tags == 'success' %} bg-green-100 text-green-700 {% else %} bg-red-100 text-red-700 {% endif %}">
@@ -75,13 +149,74 @@
                 <form method="post">
                     {% csrf_token %}
                     {{ form.as_p }}
-                    <button type="submit" class="w-full mt-4 bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700">
-                        Crear Usuario
+                    <button type="submit" class="w-full mt-4 font-bold py-2 px-4 rounded-lg hover:bg-yellow-600" style="background-color: #F0A202; color: white;">
+                        Crear Usuario +
                     </button>
                 </form>
             </div>
         </div>
+        <!-- Modal Confirmación de Eliminación -->
+        <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg shadow-lg max-w-sm w-full p-6">
+            <h2 class="text-lg font-semibold mb-4">¿Estás seguro de que quieres eliminar este usuario?</h2>
+            <div class="flex justify-end space-x-4">
+            <button id="cancelBtn" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancelar</button>
+            <button id="confirmBtn" class="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700">Borrar</button>
+            </div>
+        </div>
+        </div>
+
     </main>
+        <script>
+        // Toggle dropdown
+        document.getElementById('userMenuButton').addEventListener('click', function () {
+            const dropdown = document.getElementById('userDropdown');
+            dropdown.classList.toggle('hidden');
+        });
+        // Opcional: cerrar menú al hacer clic fuera
+        document.addEventListener('click', function (e) {
+            const button = document.getElementById('userMenuButton');
+            const dropdown = document.getElementById('userDropdown');
+            if (!button.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+    </script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('confirmModal');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const confirmBtn = document.getElementById('confirmBtn');
+        let formToSubmit = null;
+
+        // Todos los botones eliminar
+        const botonesEliminar = document.querySelectorAll('.btn-eliminar');
+
+        botonesEliminar.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Guardamos el formulario correspondiente
+            formToSubmit = btn.closest('form');
+            // Mostramos el modal
+            modal.classList.remove('hidden');
+        });
+        });
+
+        cancelBtn.addEventListener('click', () => {
+        // Ocultamos el modal sin hacer nada
+        modal.classList.add('hidden');
+        formToSubmit = null;
+        });
+
+        confirmBtn.addEventListener('click', () => {
+        if (formToSubmit) {
+            formToSubmit.submit();
+        }
+        });
+    });
+    </script>
+
+
 
 </body>
 </html>

@@ -6,7 +6,7 @@ import re
 class CleanNameMixin:
     def clean_nombre(self):
         nombre = self.cleaned_data.get('nombre')
-        if re.search(r'[^a-zA-Z0-9\s]', nombre):
+        if re.search(r'[^a-zA-Z0-9\s áéíóúÁÉÍÓÚ]', nombre):
             raise forms.ValidationError("El nombre solo puede contener letras, números y espacios.")
         return nombre
 

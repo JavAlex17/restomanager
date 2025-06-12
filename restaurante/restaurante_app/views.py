@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages 
 from .forms import EncargadoAuthForm
+from django.db.models import ProtectedError
 
 #Se importan los modelos y formularios
 from .models import Producto, Pedido, Usuario, Ingrediente, Categoria, PedidoDetalle
@@ -263,9 +264,12 @@ def editar_categoria_view(request, categoria_id):
 def eliminar_categoria_view(request, categoria_id):
     categoria = get_object_or_404(Categoria, id=categoria_id)
     if request.method == 'POST':
-        # La lógica on_delete=SET_NULL se encargará de los productos asociados
-        categoria.delete()
-        messages.success(request, f'Categoría "{categoria.nombre}" eliminada.')
+        try:
+            categoria.delete()
+            messages.success(request, f'Categoría "{categoria.nombre}" eliminada exitosamente.')
+        except ProtectedError:
+            messages.error(request, f'No se puede eliminar la categoría "{categoria.nombre}" porque está siendo usada por uno o más productos.')
+            
     return redirect('gestion_categorias')
 
 

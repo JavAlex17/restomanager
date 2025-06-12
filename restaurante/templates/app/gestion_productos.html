@@ -6,35 +6,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Productos</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primario: '#B3001B',
+            secundario: '#F0A202',
+            grisOscuro: '#353535',
+            grisMedio: '#848C8E',
+            grisClaro: '#F3F3F4'
+          }
+        }
+      }
+    }
+  </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style> body { font-family: 'Inter', sans-serif; } </style>
 </head>
-<body class="bg-gray-50">
+<body class="bg-grisClaro">
 
     <header class="bg-[#353535] shadow-sm relative"> 
         <div class="w-full mx-auto py-2 px-0 flex items-center justify-between relative">
-            <!-- Logo -->
             <div class="flex items-center ml-[-12px]">
                 <img src="{% static 'img/imagelogo.png' %}" alt="Logo" class="h-14 w-45">
             </div>
 
-            <!-- Título centrado -->
             <h1 class="absolute left-1/2 transform -translate-x-1/2 text-xl font-bold text-white">
                 Gestión de Productos
             </h1>
 
-            <!-- Menú de usuario y enlace volver -->
             <div class="flex items-center space-x-4 mr-5">
                 <a href="{% url 'dashboard' %}" class="flex items-center text-white text-sm hover:text-gray-300">
-                    <!-- Icono Home -->
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M10.707 1.293a1 1 0 00-1.414 0l-8 8A1 1 0 002 10h1v7a1 1 0 001 1h4a1 1 0 001-1v-4h2v4a1 1 0 001 1h4a1 1 0 001-1v-7h1a1 1 0 00.707-1.707l-8-8z" />
                     </svg>
                     Volver
                 </a>
 
-                <!-- Usuario -->
                 <button id="userMenuButton" class="flex items-center space-x-2 text-white hover:text-gray-200 focus:outline-none">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M10 2a4 4 0 100 8 4 4 0 000-8zM2 16a8 8 0 1116 0H2z" clip-rule="evenodd" />
@@ -42,7 +51,6 @@
                     <span class="text-sm font-medium">{{ user.username }}</span>
                 </button>
 
-                <!-- Menú desplegable usuario -->
                 <div id="userDropdown" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg py-2 z-50">
                     <form action="{% url 'logout' %}" method="post">
                         {% csrf_token %}
@@ -58,275 +66,75 @@
         </div>
     </header>
 
-
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <!-- Botón Añadir Producto -->
-    <div class="flex justify-end mb-4">
-        <button id="btnAbrirModalAgregar"
-            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#F0A202] hover:bg-[#F0A202]">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
-            Añadir Producto
-        </button>
-    </div>
-
-        <!-- Mensajes de éxito/error -->
+        <div class="flex justify-end mb-6">
+            <a href="{% url 'crear_producto' %}" class="inline-flex items-center px-4 py-2 bg-[#F0A202] hover:bg-[#d7990b] text-white text-sm font-medium rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F0A202]">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                Añadir Producto
+            </a>
+        </div>
+        
         {% if messages %}
             {% for message in messages %}
-            <div class="mb-4 p-4 text-sm rounded-lg bg-green-100 text-green-700" role="alert">
-                {{ message }}
-            </div>
+            <div class="mb-4 p-4 text-sm rounded-lg {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}" role="alert">{{ message }}</div>
             {% endfor %}
         {% endif %}
-
+        
+        <!-- Lista productos -->
         <div class="bg-white shadow overflow-hidden rounded-md">
             <ul role="list" class="divide-y divide-gray-200">
                 {% for producto in productos %}
-                <li class="px-6 py-4">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            {% if producto.imagen %}
-                            <img class="h-10 w-10 rounded-full object-cover" src="{{ producto.imagen.url }}" alt="">
-                            {% else %}
+                <li class="px-6 py-4 flex items-center justify-between">
+                    <div class="flex items-center">
+                        {% if producto.imagen %}
+                            <img class="h-10 w-10 rounded-full object-cover" src="{{ producto.imagen.url }}" alt="Imagen de {{ producto.nombre }}">
+                        {% else %}
                             <span class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-xs">Sin foto</span>
-                            {% endif %}
-                            <div class="ml-4">
-                                <p class="text-sm font-medium text-gray-900">{{ producto.nombre }}</p>
-                                <p class="text-sm text-gray-500">{{ producto.categoria }}</p>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center space-x-4">
-                            <span class="text-sm font-semibold text-gray-900">${{ producto.precio }}</span>
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if producto.disponible %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
-                                {% if producto.disponible %}Disponible{% else %}No Disponible{% endif %}
-                            </span>
-
-                            <!-- Botón Editar con ícono -->
-                            <button
-                                data-id="{{ producto.id }}"
-                                data-nombre="{{ producto.nombre|escapejs }}"
-                                data-categoria="{{ producto.categoria|escapejs }}"
-                                data-precio="{{ producto.precio }}"
-                                data-disponible="{{ producto.disponible }}"
-                                class="btn-edit-producto text-sm font-medium text-indigo-600 hover:text-indigo-900 inline-flex items-center space-x-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M18.5 2.5l3 3L12 15H9v-3L18.5 2.5z" />
-                                </svg>
-                                <span>Editar</span>
-                            </button>
-
-                            <!-- Botón Eliminar con ícono -->
-                            <form action="{% url 'eliminar_producto' producto.id %}" method="post" class="inline" onsubmit="return confirm('¿Estás seguro de que quieres eliminar este producto?');">
-                                {% csrf_token %}
-                                <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-900 inline-flex items-center space-x-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0a2 2 0 00-2-2H9a2 2 0 00-2 2h10z" />
-                                    </svg>
-                                    <span>Eliminar</span>
-                                </button>
-                            </form>
+                        {% endif %}
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-900">{{ producto.nombre }}</p>
+                            <p class="text-sm text-gray-500">{{ producto.categoria.nombre|default:"Sin categoría" }}</p>
                         </div>
                     </div>
+                    <div class="flex items-center space-x-4">
+                        <span class="text-sm font-semibold text-gray-900">${{ producto.precio }}</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if producto.disponible %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                            {% if producto.disponible %}Disponible{% else %}No Disponible{% endif %}
+                        </span>
+                        <!-- Botón Editar -->
+                        <a href="{% url 'editar_producto' producto.id %}" class="text-sm font-medium text-indigo-600 hover:text-indigo-900 inline-flex items-center space-x-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M18.5 2.5l3 3L12 15H9v-3L18.5 2.5z" /></svg>
+                            <span>Editar</span>
+                        </a>
+                        <!-- Formulario de eliminar -->
+                        <form action="{% url 'eliminar_producto' producto.id %}" method="post" class="inline" onsubmit="return confirm('¿Seguro que quieres eliminar este producto?');">
+                            {% csrf_token %}
+                            <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-900 inline-flex items-center space-x-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0a2 2 0 00-2-2H9a2 2 0 00-2 2h10z" /></svg>
+                                <span>Eliminar</span>
+                            </button>
+                        </form>
+                    </div>
                 </li>
-                {% empty %}
-                <li class="px-6 py-4 text-center text-gray-500">No hay productos registrados. ¡Añade el primero!</li>
                 {% endfor %}
             </ul>
         </div>
-        <!-- Modal Editar Producto -->
-        <div id="modalEditarProducto" class="fixed z-10 inset-0 overflow-y-auto hidden">
-        <div class="flex items-center justify-center min-h-screen px-4">
-            <div class="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg w-full">
-            <div class="px-6 py-4 border-b">
-                <h3 class="text-lg font-medium text-gray-900">Editar Producto</h3>
-            </div>
-            <form id="formEditarProducto" method="POST" action="">
-                {% csrf_token %}
-                <div class="px-6 py-4 space-y-4">
-                <input type="hidden" name="producto_id" id="editarProductoId">
-                <div>
-                    <label for="editarNombre" class="block text-sm font-medium text-gray-700">Nombre</label>
-                    <input type="text" name="nombre" id="editarNombre" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                </div>
-                <div>
-                    <label for="editarCategoria" class="block text-sm font-medium text-gray-700">Categoría</label>
-                    <select name="categoria" id="editarCategoria" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                        <option value="">-- Seleccionar categoría --</option>
-                        {% for categoria in categorias %}
-                        <option value="{{ categoria.id }}">{{ categoria.nombre }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div>
-                    <label for="editarPrecio" class="block text-sm font-medium text-gray-700">Precio</label>
-                    <input type="number" step="0.01" name="precio" id="editarPrecio" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                </div>
-                <div class="flex items-center">
-                    <input type="checkbox" name="disponible" id="editarDisponible" class="mr-2">
-                    <label for="editarDisponible" class="text-sm text-gray-700">Disponible</label>
-                </div>
-                </div>
-                <div class="px-6 py-3 bg-gray-50 flex justify-end space-x-2">
-                <button type="button" id="btnCancelarModal" class="px-4 py-2 text-sm text-gray-700 bg-gray-200 rounded hover:bg-gray-300">Cancelar</button>
-                <button type="submit" class="px-4 py-2 text-sm text-white bg-[#F0A202] rounded hover:bg-[#F0A202]">Guardar</button>
-                </div>
-            </form>
-            </div>
-        </div>
-        </div>
-        <!-- Modal Agregar Producto -->
-        <div id="modalAgregarProducto" class="fixed z-10 inset-0 overflow-y-auto hidden">
-            <div class="flex items-center justify-center min-h-screen px-4">
-                <div class="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg w-full">
-                    <div class="px-6 py-4 bg-[#F0A202] text-center">
-                        <h3 class="text-lg font-semibold text-white">Agregar Producto</h3>
-                    </div>
-                    <form id="formAgregarProducto" method="POST" action="{% url 'crear_producto' %}" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        <div class="px-6 py-4 space-y-4">
-                            <div>
-                                <label for="agregarNombre" class="block text-sm font-medium text-gray-700">Nombre</label>
-                                <input type="text" name="nombre" id="agregarNombre" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                            </div>
-                            <div>
-                                <label for="agregarDescripcion" class="block text-sm font-medium text-gray-700">Descripción</label>
-                                <textarea name="descripcion" id="agregarDescripcion" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"></textarea>
-                            </div>
-                            <div>
-                                <label for="agregarPrecio" class="block text-sm font-medium text-gray-700">Precio</label>
-                                <input type="number" name="precio" id="agregarPrecio" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                            </div>
-                            <div>
-                                <label for="agregarImagen" class="block text-sm font-medium text-gray-700">Imagen</label>
-                                <input type="file" name="imagen" id="agregarImagen" accept="image/*" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                            </div>
-                            <div>
-                                <label for="agregarCategoria" class="block text-sm font-medium text-gray-700">Categoría</label>
-                                <select name="categoria" id="agregarCategoria" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                                    <option value="">-- Seleccionar categoría --</option>
-                                    {% for categoria in categorias %}
-                                    <option value="{{ categoria.id }}">{{ categoria.nombre }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="flex items-center">
-                                <input type="checkbox" name="disponible" id="agregarDisponible" checked class="mr-2">
-                                <label for="agregarDisponible" class="text-sm text-gray-700">Disponible</label>
-                            </div>
-                        </div>
-                        <div class="px-6 py-3 bg-gray-50 flex justify-end space-x-2">
-                            <button type="button" id="btnCancelarAgregar" class="px-4 py-2 text-sm text-gray-700 bg-gray-200 rounded hover:bg-gray-300">Cancelar</button>
-                            <button type="submit" class="px-4 py-2 text-sm text-white bg-[#F0A202] rounded hover:bg-[#F0A202]">Guardar</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-
     </main>
+
     <script>
-        // Toggle dropdown
-        document.getElementById('userMenuButton').addEventListener('click', function () {
-            const dropdown = document.getElementById('userDropdown');
-            dropdown.classList.toggle('hidden');
+        // Script para el menú desplegable del usuario
+        const userMenuButton = document.getElementById('userMenuButton');
+        const userDropdown = document.getElementById('userDropdown');
+        userMenuButton.addEventListener('click', function () {
+            userDropdown.classList.toggle('hidden');
         });
-        // Opcional: cerrar menú al hacer clic fuera
         document.addEventListener('click', function (e) {
-            const button = document.getElementById('userMenuButton');
-            const dropdown = document.getElementById('userDropdown');
-            if (!button.contains(e.target) && !dropdown.contains(e.target)) {
-                dropdown.classList.add('hidden');
+            if (!userMenuButton.contains(e.target) && !userDropdown.contains(e.target)) {
+                userDropdown.classList.add('hidden');
             }
         });
     </script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const modal = document.getElementById("modalEditarProducto");
-            const form = document.getElementById("formEditarProducto");
-            const btnCancelar = document.getElementById("btnCancelarModal");
-
-            const inputId = document.getElementById("editarProductoId");
-            const inputNombre = document.getElementById("editarNombre");
-            const inputCategoria = document.getElementById("editarCategoria");
-            const inputPrecio = document.getElementById("editarPrecio");
-            const inputDisponible = document.getElementById("editarDisponible");
-
-            // Abrir modal al hacer clic en "Editar"
-            document.querySelectorAll(".btn-edit-producto").forEach(btn => {
-                btn.addEventListener("click", function () {
-                    const id = this.dataset.id;
-                    const nombre = this.dataset.nombre;
-                    const categoria = this.dataset.categoria;
-                    const precio = this.dataset.precio;
-                    const disponible = this.dataset.disponible === "True";
-
-                    inputId.value = id;
-                    inputNombre.value = nombre;
-                    inputCategoria.value = categoria;
-                    inputPrecio.value = precio;
-                    inputDisponible.checked = disponible;
-
-                    formEditarProducto.action = `/dashboard/productos/editar/${id}/`;
-                      // Ajusta si tu URL de edición cambia
-
-                    modal.classList.remove("hidden");
-                });
-            });
-
-            // Cerrar modal
-            btnCancelar.addEventListener("click", function () {
-                modal.classList.add("hidden");
-            });
-        });
-        </script>
-        <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const modalAgregar = document.getElementById("modalAgregarProducto");
-            const btnAbrirModal = document.getElementById("btnAbrirModalAgregar");
-            const btnCancelarAgregar = document.getElementById("btnCancelarAgregar");
-
-            btnAbrirModal.addEventListener("click", () => {
-                modalAgregar.classList.remove("hidden");
-                cargarCategorias(); // 🔄 Llamar a esta función cuando se abre el modal
-            });
-
-            btnCancelarAgregar.addEventListener("click", () => {
-                modalAgregar.classList.add("hidden");
-                document.getElementById("formAgregarProducto").reset();
-            });
-
-            modalAgregar.addEventListener("click", (e) => {
-                if (e.target === modalAgregar) {
-                    modalAgregar.classList.add("hidden");
-                    document.getElementById("formAgregarProducto").reset();
-                }
-            });
-
-            function cargarCategorias() {
-                fetch('/api/categorias/')  // ← Asegúrate que esta URL devuelva JSON con las categorías
-                    .then(response => response.json())
-                    .then(data => {
-                        const select = document.getElementById("agregarCategoria");
-                        select.innerHTML = '<option value="">-- Seleccionar categoría --</option>';
-                        data.categorias.forEach(categoria => {
-                            const option = document.createElement("option");
-                            option.value = categoria.id;
-                            option.textContent = categoria.nombre;
-                            select.appendChild(option);
-                        });
-                    })
-                    .catch(error => {
-                        console.error("Error cargando categorías:", error);
-                    });
-            }
-        });
-        </script>
-
-
 </body>
 </html>

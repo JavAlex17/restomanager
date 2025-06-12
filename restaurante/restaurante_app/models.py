@@ -40,11 +40,11 @@ class Categoria(models.Model):
         return self.nombre
 
 class Producto(models.Model):
-    nombre = models.CharField(max_length=100)
+    nombre = models.CharField(max_length=100, unique=True)
     descripcion = models.TextField(blank=True)
     precio = models.IntegerField(help_text="Precio del producto (en formato entero)")
     imagen = models.ImageField(upload_to='productos/', blank=True, null=True)
-    categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True, blank=True)
+    categoria = models.ForeignKey(Categoria, on_delete=models.PROTECT)
     disponible = models.BooleanField(default=True)
     ingredientes = models.ManyToManyField(Ingrediente, through='ProductoIngrediente')
     def __str__(self):
@@ -61,7 +61,11 @@ class ProductoIngrediente(models.Model):
 class Pedido(models.Model):
     usuario = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True)
     fecha_hora = models.DateTimeField(auto_now_add=True)
-    ESTADO_CHOICES = (('PENDIENTE', 'Pendiente'), ('EN_PROCESO', 'En Proceso'), ('COMPLETADO', 'Completado'), ('CANCELADO', 'Cancelado'))
+    ESTADO_CHOICES = (
+    ('PENDIENTE', 'Pendiente'),
+    ('ENTREGADO', 'Entregado'),
+    ('PAGADO', 'Pagado'),
+    ('CANCELADO', 'Cancelado'),)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='PENDIENTE')
     monto_total = models.IntegerField(default=0)
     def __str__(self):

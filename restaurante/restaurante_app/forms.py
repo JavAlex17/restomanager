@@ -1,48 +1,71 @@
 from django import forms
 from .models import Usuario, Producto, Ingrediente, Categoria
+import re
 
+#Validador para nombres de usuario
+class CleanNameMixin:
+    def clean_nombre(self):
+        nombre = self.cleaned_data.get('nombre')
+        if re.search(r'[^a-zA-Z0-9\s]', nombre):
+            raise forms.ValidationError("El nombre solo puede contener letras, números y espacios.")
+        return nombre
+
+
+#Formulario para crear un nuevo usuario
 class UsuarioCreationForm(forms.ModelForm):
-    # Usamos un PasswordInput para que la contraseña se muestre oculta
     password = forms.CharField(widget=forms.PasswordInput, label="Contraseña")
 
     class Meta:
         model = Usuario
-        # Campos que se mostrarán en el formulario
         fields = ('username', 'password', 'rol')
-
+    
     def save(self, commit=True):
-        # Sobrescribimos el método save para manejar la contraseña
         user = super().save(commit=False)
-        # Usamos set_password para que la contraseña se encripte (hash) correctamente
         user.set_password(self.cleaned_data["password"])
         if commit:
             user.save()
         return user
-    
-class ProductoForm(forms.ModelForm):
+
+#Formulario para productos  
+class ProductoForm(CleanNameMixin, forms.ModelForm):
     ingredientes = forms.ModelMultipleChoiceField(
         queryset=Ingrediente.objects.all().order_by('nombre'),
         widget=forms.CheckboxSelectMultiple,
-        required=False, # Hacemos que no sea obligatorio seleccionar ingredientes.
+        required=False,
         label="Ingredientes del Platillo"
+    )
+    categoria = forms.ModelChoiceField(
+        queryset=Categoria.objects.all(),
+        empty_label=None,
+        label="Categoría"
     )
     class Meta:
         model = Producto
-        # Incluimos todos los campos que el encargado debe poder editar.
         fields = ['nombre', 'descripcion', 'precio', 'categoria', 'imagen', 'disponible', 'ingredientes']
         widgets = {
             'descripcion': forms.Textarea(attrs={'rows': 3}),
         }
 
-class IngredienteForm(forms.ModelForm):
-    """
-    Formulario simple para crear y editar ingredientes.
-    """
+#Formulario para crear y editar ingredientes
+class IngredienteForm(CleanNameMixin, forms.ModelForm):
     class Meta:
         model = Ingrediente
         fields = ['nombre', 'precio']
 
-class CategoriaForm(forms.ModelForm):
+#Formulario para crear y editar categorias
+class CategoriaForm(CleanNameMixin, forms.ModelForm):
     class Meta:
         model = Categoria
         fields = ['nombre']
+
+#Formulario para autenticar al encargado
+class EncargadoAuthForm(forms.Form):
+    username = forms.CharField(
+        label="Usuario de Encargado", 
+        max_length=150,
+        widget=forms.TextInput(attrs={'placeholder': 'Usuario del encargado', 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md'})
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'placeholder': 'Contraseña del encargado', 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md'}), 
+        label="Contraseña de Encargado"
+    )

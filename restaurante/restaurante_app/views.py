@@ -1,20 +1,17 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages 
+from .forms import EncargadoAuthForm
 
 #Se importan los modelos y formularios
 from .models import Producto, Pedido, Usuario, Ingrediente, Categoria, PedidoDetalle
 from .forms import UsuarioCreationForm, ProductoForm, IngredienteForm, CategoriaForm
 import uuid
 
-
+#Se verifica si el usuario logueado tiene el rol de encargado
 def staff_required(view_func):
-    """
-    Decorador personalizado que verifica si el usuario logueado
-    tiene el rol de 'ENCARGADO'. Si no, lo redirige.
-    """
     @login_required
     def _wrapped_view(request, *args, **kwargs):
         if request.user.rol != 'ENCARGADO':
@@ -23,12 +20,8 @@ def staff_required(view_func):
         return view_func(request, *args, **kwargs)
     return _wrapped_view
 
-
+#Página de inicio
 def index_view(request):
-    """
-    Página de inicio. Si el usuario está autenticado, lo redirige
-    a su vista correspondiente. Si no, lo manda al login.
-    """
     if request.user.is_authenticated:
         if request.user.rol == 'MESA':
             return redirect('menu')
@@ -39,12 +32,8 @@ def index_view(request):
     
     return redirect('login')
 
-
+#Inicio de sesión
 def login_view(request):
-    """
-    Maneja el inicio de sesión. Si el login es exitoso,
-    redirige al usuario según su rol.
-    """
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
@@ -53,7 +42,6 @@ def login_view(request):
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
-                # Redirección basada en el rol del usuario
                 if user.rol == 'MESA':
                     return redirect('menu')
                 elif user.rol == 'ENCARGADO':
@@ -61,34 +49,33 @@ def login_view(request):
                 elif user.rol == 'CAMARERO':
                     return redirect('pedidos_camarero')
                 else:
-                    return redirect('login') # Por si hay un rol no definido
+                    return redirect('login')
     else:
         form = AuthenticationForm()
         
-    # Si el usuario ya está logueado, lo redirigimos para que no vea el login de nuevo
     if request.user.is_authenticated:
         return redirect('index')
 
     return render(request, 'registration/login.html', {'form': form})
 
+#Vista del menú
 @login_required
 def menu_view(request):
-    """Vista del menú para los usuarios de tipo Mesa."""
-    if request.user.rol != 'MESA':
-        return redirect('index')
+    if request.user.rol != 'MESA': return redirect('index')
+    
     productos = Producto.objects.filter(disponible=True).order_by('categoria__orden', 'nombre')
+    all_ingredients = Ingrediente.objects.all()
+    
     context = {
         'productos': productos,
         'mesa_nombre': request.user.username,
+        'all_ingredients': all_ingredients,
     }
     return render(request, 'app/menu.html', context)
 
+#Panel de control para el encargado
 @login_required
 def dashboard_encargado_view(request):
-    """
-    Panel para el encargado. Aquí podría ver estadísticas,
-    y tener enlaces para gestionar productos, ingredientes, etc.
-    """
     if request.user.rol != 'ENCARGADO':
         return redirect('index')
         
@@ -96,14 +83,11 @@ def dashboard_encargado_view(request):
     context = {
         'pedidos_recientes': pedidos_recientes
     }
-    # En el template 'dashboard.html' pondrías los enlaces al CRUD de productos.
     return render(request, 'app/dashboard.html', context)
 
+#Panel para los camareros
 @login_required
 def pedidos_camarero_view(request):
-    """
-    Vista para los camareros. Muestra pedidos pendientes o en proceso.
-    """
     if request.user.rol != 'CAMARERO':
         return redirect('index')
 
@@ -113,26 +97,21 @@ def pedidos_camarero_view(request):
     }
     return render(request, 'app/pedidos_camarero.html', context)
 
-
+#Vista de gestion de usuarios
 @login_required
 def gestion_usuarios_view(request):
-    # Solo los encargados pueden acceder
     if request.user.rol != 'ENCARGADO':
         return redirect('index')
 
-    # Si el método es POST, significa que se está enviando el formulario de creación
     if request.method == 'POST':
         form = UsuarioCreationForm(request.POST)
         if form.is_valid():
             form.save()
-            # Mostramos un mensaje de éxito y redirigimos a la misma página
             messages.success(request, '¡Usuario creado exitosamente!')
             return redirect('gestion_usuarios')
     else:
-        # Si es GET, creamos una instancia vacía del formulario
         form = UsuarioCreationForm()
 
-    # Obtenemos todos los usuarios excepto el propio encargado que está viendo la página
     usuarios = Usuario.objects.exclude(id=request.user.id)
     
     context = {
@@ -141,35 +120,34 @@ def gestion_usuarios_view(request):
     }
     return render(request, 'app/gestion_usuarios.html', context)
 
+
 @login_required
 def eliminar_usuario_view(request, user_id):
-    # Solo los encargados pueden eliminar usuarios
     if request.user.rol != 'ENCARGADO':
         return redirect('index')
-    
-    # Buscamos el usuario a eliminar, si no existe, dará un error 404
+
     usuario_a_eliminar = get_object_or_404(Usuario, id=user_id)
     
-    # El encargado no se puede eliminar a sí mismo
     if usuario_a_eliminar.id == request.user.id:
         messages.error(request, 'No puedes eliminar tu propia cuenta.')
     else:
-        # Eliminamos el usuario y mostramos un mensaje
         usuario_a_eliminar.delete()
         messages.success(request, f'Usuario "{usuario_a_eliminar.username}" eliminado exitosamente.')
 
     return redirect('gestion_usuarios')
 
+
+
+#Vista para gestionar productos (CRUD)
 @staff_required
 def gestion_productos_view(request):
     """Vista para listar todos los productos (Read)."""
     productos = Producto.objects.all().order_by('categoria', 'nombre')
     return render(request, 'app/gestion_productos.html', {'productos': productos})
 
-
+#Vista para crear un nuevo producto (Create)
 @staff_required
 def crear_producto_view(request):
-    """Vista para crear un nuevo producto (Create)."""
     if request.method == 'POST':
         form = ProductoForm(request.POST, request.FILES)
         if form.is_valid():
@@ -181,49 +159,24 @@ def crear_producto_view(request):
     
     return render(request, 'app/producto_form.html', {'form': form, 'titulo': 'Añadir Nuevo Producto'})
 
-
-
+#Vista para editar un producto existente (Update)
 @staff_required
 def editar_producto_view(request, producto_id):
     producto = get_object_or_404(Producto, id=producto_id)
-
     if request.method == 'POST':
-        # Obtener datos desde POST
-        nombre = request.POST.get('nombre')
-        categoria_id = request.POST.get('categoria')
-        precio = request.POST.get('precio')
-        disponible = request.POST.get('disponible') == 'on'  # checkbox
+        form = ProductoForm(request.POST, request.FILES, instance=producto)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Producto actualizado exitosamente.')
+            return redirect('gestion_productos')
+    else:
+        form = ProductoForm(instance=producto)
+    
+    return render(request, 'app/producto_form.html', {'form': form, 'titulo': 'Editar Producto'})
 
-        # Actualizar campos
-        producto.nombre = nombre
-        producto.precio = precio if precio else producto.precio
-
-        # Categoria: si viene id válido
-        if categoria_id:
-            from app.models import Categoria
-            categoria = Categoria.objects.filter(id=categoria_id).first()
-            producto.categoria = categoria
-        else:
-            producto.categoria = None
-
-        producto.disponible = disponible
-
-        producto.save()
-
-        messages.success(request, 'Producto actualizado exitosamente.')
-        return redirect('gestion_productos')
-
-    # Si acceden con GET, podrías redirigir o mostrar algo
-    return redirect('gestion_productos')
-
-def gestion_productos_view(request):
-    productos = Producto.objects.all()
-    categorias = Categoria.objects.all()
-    return render(request, 'app/gestion_productos.html', {'productos': productos, 'categorias': categorias})
-
+# Acción para eliminar un producto (Delete)
 @staff_required
 def eliminar_producto_view(request, producto_id):
-    """Acción para eliminar un producto (Delete)."""
     producto = get_object_or_404(Producto, id=producto_id)
     if request.method == 'POST':
         messages.success(request, f'Producto "{producto.nombre}" eliminado exitosamente.')
@@ -231,25 +184,26 @@ def eliminar_producto_view(request, producto_id):
     return redirect('gestion_productos')
 
 
+#Vista para gestionar ingredientes (CRUD)
 @staff_required
 def gestion_ingredientes_view(request):
-    ingredientes = Ingrediente.objects.all().order_by('nombre')
-    return render(request, 'app/gestion_ingredientes.html', {'ingredientes': ingredientes})
-
-
-@staff_required
-def crear_ingrediente_view(request):
     if request.method == 'POST':
         form = IngredienteForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Ingrediente creado exitosamente.')
+            messages.success(request, 'Ingrediente añadido exitosamente.')
             return redirect('gestion_ingredientes')
     else:
         form = IngredienteForm()
-    return render(request, 'app/ingrediente_form.html', {'form': form, 'titulo': 'Añadir Nuevo Ingrediente'})
 
+    ingredientes = Ingrediente.objects.all().order_by('nombre')
+    context = {
+        'ingredientes': ingredientes,
+        'form': form,
+    }
+    return render(request, 'app/gestion_ingredientes.html', context)
 
+#Vista para editar un ingrediente existente (Update)
 @staff_required
 def editar_ingrediente_view(request, ingrediente_id):
     ingrediente = get_object_or_404(Ingrediente, id=ingrediente_id)
@@ -259,11 +213,9 @@ def editar_ingrediente_view(request, ingrediente_id):
             form.save()
             messages.success(request, 'Ingrediente actualizado exitosamente.')
             return redirect('gestion_ingredientes')
-    else:
-        form = IngredienteForm(instance=ingrediente)
-    return render(request, 'app/ingrediente_form.html', {'form': form, 'titulo': 'Editar Ingrediente'})
+    return redirect('gestion_ingredientes') 
 
-
+# Acción para eliminar un ingrediente (Delete)
 @staff_required
 def eliminar_ingrediente_view(request, ingrediente_id):
     ingrediente = get_object_or_404(Ingrediente, id=ingrediente_id)
@@ -272,13 +224,9 @@ def eliminar_ingrediente_view(request, ingrediente_id):
         ingrediente.delete()
     return redirect('gestion_ingredientes')
 
-
+#Vista para gestionar categorías (CRUD)
 @staff_required
 def gestion_categorias_view(request):
-    """
-    Vista para listar categorías existentes y añadir una nueva.
-    Combinamos la lista y la creación en una sola página para mayor comodidad.
-    """
     if request.method == 'POST':
         form = CategoriaForm(request.POST)
         if form.is_valid():
@@ -294,22 +242,10 @@ def gestion_categorias_view(request):
         'form': form
     }
     return render(request, 'app/gestion_categorias.html', context)
-from django.http import JsonResponse
-from .models import Categoria
 
-def obtener_categorias_json(request):
-    categorias = Categoria.objects.all().values('id', 'nombre')
-    return JsonResponse({'categorias': list(categorias)})
-def productos_view(request):
-    categorias = Categoria.objects.all()
-    productos = Producto.objects.all()
-    return render(request, 'productos.html', {
-        'productos': productos,
-        'categorias': categorias
-    })
+#Vista para editar una categoría existente (Update)
 @staff_required
 def editar_categoria_view(request, categoria_id):
-    """Vista para editar el nombre de una categoría."""
     categoria = get_object_or_404(Categoria, id=categoria_id)
     if request.method == 'POST':
         form = CategoriaForm(request.POST, instance=categoria)
@@ -322,9 +258,9 @@ def editar_categoria_view(request, categoria_id):
     
     return render(request, 'app/categoria_form.html', {'form': form, 'titulo': 'Editar Categoría'})
 
+# Acción para eliminar una categoría (Delete)
 @staff_required
 def eliminar_categoria_view(request, categoria_id):
-    """Acción para eliminar una categoría."""
     categoria = get_object_or_404(Categoria, id=categoria_id)
     if request.method == 'POST':
         # La lógica on_delete=SET_NULL se encargará de los productos asociados
@@ -332,6 +268,43 @@ def eliminar_categoria_view(request, categoria_id):
         messages.success(request, f'Categoría "{categoria.nombre}" eliminada.')
     return redirect('gestion_categorias')
 
+
+
+#Vista para ver el pedido actual
+@login_required
+def ver_pedido(request):
+    if request.user.rol != 'MESA': return redirect('index')
+    
+    pedido_session = request.session.get('pedido', {})
+    pedido_enriquecido = {}
+    total_general = 0
+    all_ingredients = Ingrediente.objects.all()
+
+    for item_id, item_details in pedido_session.items():
+        producto = get_object_or_404(Producto, id=item_details['producto_id'])
+        cantidad = item_details.get('cantidad', 1)
+        precio_unitario = item_details.get('precio_unitario', 0)
+        subtotal = precio_unitario * cantidad
+        total_general += subtotal
+        
+        #Se obtienen los nombres de los ingredientes seleccionados
+        ingredientes_ids = item_details.get('ingredientes_ids', [])
+        nombres_ingredientes = list(Ingrediente.objects.filter(id__in=ingredientes_ids).values_list('nombre', flat=True))
+        
+        #Se crea una copia
+        item_enriquecido = item_details.copy()
+        item_enriquecido['producto'] = producto
+        item_enriquecido['subtotal'] = subtotal
+        item_enriquecido['nombres_ingredientes'] = nombres_ingredientes
+        pedido_enriquecido[item_id] = item_enriquecido
+
+    return render(request, 'app/ver_pedido.html', {
+        'pedido': pedido_enriquecido, 
+        'total': total_general,
+        'all_ingredients': all_ingredients,
+    })
+
+#Acción para añadir un producto al pedido
 @login_required
 def anadir_al_pedido(request, producto_id):
     if request.user.rol != 'MESA': return redirect('index')
@@ -346,17 +319,32 @@ def anadir_al_pedido(request, producto_id):
     except (ValueError, TypeError):
         cantidad = 1
         
-    ingredientes_seleccionados = request.POST.getlist('ingredientes')
+    ingredientes_seleccionados_ids_str = request.POST.getlist('ingredientes')
+    ingredientes_seleccionados_ids = {int(i) for i in ingredientes_seleccionados_ids_str}
     observacion = request.POST.get('observacion', '')
 
-    # Creamos un ID único para este item para permitir personalizaciones distintas del mismo producto.
+    #Costo de los ingredientes extra
+    extra_cost = 0
+    base_ingredientes_ids = set(producto.ingredientes.values_list('id', flat=True))
+    
+    for ing_id in ingredientes_seleccionados_ids:
+        if ing_id not in base_ingredientes_ids:
+            try:
+                ingrediente_extra = Ingrediente.objects.get(id=ing_id)
+                extra_cost += ingrediente_extra.precio
+            except Ingrediente.DoesNotExist:
+                continue
+
+    #Precio final del item base + los extras
+    item_price = producto.precio + extra_cost
+
     item_id = str(uuid.uuid4())
     request.session['pedido'][item_id] = {
         'producto_id': producto.id,
         'nombre': producto.nombre,
-        'precio': producto.precio,
+        'precio_unitario': item_price,
         'cantidad': cantidad,
-        'ingredientes': ingredientes_seleccionados,
+        'ingredientes_ids': list(ingredientes_seleccionados_ids),
         'observacion': observacion,
     }
 
@@ -364,32 +352,8 @@ def anadir_al_pedido(request, producto_id):
     messages.success(request, f'{cantidad} x "{producto.nombre}" se ha(n) añadido a tu pedido.')
     return redirect('menu')
 
-@login_required
-def ver_pedido(request):
-    if request.user.rol != 'MESA': return redirect('index')
-    
-    pedido_session = request.session.get('pedido', {})
-    pedido_enriquecido = {}
-    total_general = 0
 
-    for item_id, item_details in pedido_session.items():
-        cantidad = item_details.get('cantidad', 1)
-        precio = item_details.get('precio', 0)
-        subtotal = precio * cantidad
-        total_general += subtotal
-        
-        # Obtenemos los nombres de los ingredientes para mostrarlos
-        ingredientes_ids = [int(i) for i in item_details.get('ingredientes', [])]
-        nombres_ingredientes = list(Ingrediente.objects.filter(id__in=ingredientes_ids).values_list('nombre', flat=True))
-        
-        # Creamos una copia para no modificar la sesión directamente
-        item_enriquecido = item_details.copy()
-        item_enriquecido['subtotal'] = subtotal
-        item_enriquecido['nombres_ingredientes'] = nombres_ingredientes
-        pedido_enriquecido[item_id] = item_enriquecido
-
-    return render(request, 'app/ver_pedido.html', {'pedido': pedido_enriquecido, 'total': total_general})
-
+#Acción para eliminar un item del pedido
 @login_required
 def eliminar_del_pedido(request, item_id):
     if request.user.rol != 'MESA': return redirect('index')
@@ -399,27 +363,32 @@ def eliminar_del_pedido(request, item_id):
         messages.success(request, 'El producto ha sido eliminado de tu pedido.')
     return redirect('ver_pedido')
 
+#Acción para confirmar el pedido
 @login_required
 def confirmar_pedido(request):
     if request.user.rol != 'MESA' or not request.session.get('pedido'):
         return redirect('menu')
 
     pedido_session = request.session.get('pedido', {})
-    monto_final = sum(item['precio'] * item.get('cantidad', 1) for item in pedido_session.values())
+    monto_final = sum(item['precio_unitario'] * item.get('cantidad', 1) for item in pedido_session.values())
     
     nuevo_pedido = Pedido.objects.create(usuario=request.user, monto_total=monto_final, estado='PENDIENTE')
     
     for item_id, item_details in pedido_session.items():
         producto = get_object_or_404(Producto, id=item_details['producto_id'])
         
-        # Formateamos un string con todas las personalizaciones
         personalizacion_str = ""
-        ingredientes_ids = [int(i) for i in item_details.get('ingredientes', [])]
-        if all_ingredientes := producto.ingredientes.all():
-            nombres_excluidos = list(all_ingredientes.exclude(id__in=ingredientes_ids).values_list('nombre', flat=True))
-            if nombres_excluidos:
-                personalizacion_str += f"Sin: {', '.join(nombres_excluidos)}. "
-        
+        ingredientes_ids = item_details.get('ingredientes_ids', [])
+        base_ingredientes_ids = set(producto.ingredientes.values_list('id', flat=True))
+
+        ingredientes_agregados = Ingrediente.objects.filter(id__in=[i for i in ingredientes_ids if i not in base_ingredientes_ids])
+        if ingredientes_agregados.exists():
+            personalizacion_str += f"Con extra: {', '.join(ing.nombre for ing in ingredientes_agregados)}. "
+
+        ingredientes_quitados = producto.ingredientes.exclude(id__in=ingredientes_ids)
+        if ingredientes_quitados.exists():
+             personalizacion_str += f"Sin: {', '.join(ing.nombre for ing in ingredientes_quitados)}. "
+
         if observacion := item_details.get('observacion'):
             personalizacion_str += f"Obs: {observacion}"
 
@@ -432,4 +401,82 @@ def confirmar_pedido(request):
     
     del request.session['pedido']
     messages.success(request, '¡Tu pedido ha sido enviado a la cocina!')
+    return redirect('menu')
+
+#Acción para actualizar un item del pedido
+@login_required
+def actualizar_item_pedido(request, item_id):
+    if request.user.rol != 'MESA': return redirect('index')
+
+    if 'pedido' not in request.session or item_id not in request.session['pedido']:
+        return redirect('ver_pedido')
+        
+    if request.method == 'POST':
+        item_actual = request.session['pedido'][item_id]
+        producto = get_object_or_404(Producto, id=item_actual['producto_id'])
+
+        try:
+            cantidad = int(request.POST.get('cantidad', 1))
+            if cantidad < 1: cantidad = 1
+        except (ValueError, TypeError):
+            cantidad = 1
+
+        ingredientes_seleccionados_ids_str = request.POST.getlist('ingredientes')
+        ingredientes_seleccionados_ids = {int(i) for i in ingredientes_seleccionados_ids_str}
+        observacion = request.POST.get('observacion', '')
+
+        extra_cost = 0
+        base_ingredientes_ids = set(producto.ingredientes.values_list('id', flat=True))
+        
+        for ing_id in ingredientes_seleccionados_ids:
+            if ing_id not in base_ingredientes_ids:
+                try:
+                    ingrediente_extra = Ingrediente.objects.get(id=ing_id)
+                    extra_cost += ingrediente_extra.precio
+                except Ingrediente.DoesNotExist:
+                    continue
+
+        item_price = producto.precio + extra_cost
+        
+        request.session['pedido'][item_id] = {
+            'producto_id': producto.id,
+            'nombre': producto.nombre,
+            'precio_unitario': item_price,
+            'cantidad': cantidad,
+            'ingredientes_ids': list(ingredientes_seleccionados_ids),
+            'observacion': observacion,
+        }
+        request.session.modified = True
+        messages.success(request, f'Se ha actualizado tu pedido.')
+    
+    return redirect('ver_pedido')
+
+#Acción para cerrar sesión
+@login_required
+def logout_view(request):
+    if request.user.rol != 'MESA':
+        logout(request)
+    return redirect('login')
+
+#Acción para cerrar sesión de una mesa
+@login_required
+def logout_mesa_view(request):
+    if request.user.rol != 'MESA':
+        return redirect('index')
+
+    if request.method == 'POST':
+        form = EncargadoAuthForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            
+            encargado_user = authenticate(request, username=username, password=password)
+            
+            if encargado_user is not None and encargado_user.rol == 'ENCARGADO':
+                logout(request)
+                return redirect('login')
+            else:
+                messages.error(request, 'Credenciales de encargado inválidas.')
+                return redirect('menu')
+    
     return redirect('menu')

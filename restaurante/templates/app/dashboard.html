@@ -26,36 +26,29 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
 <body class="bg-grisClaro">
-    <!--head-->
     <header class="bg-grisOscuro shadow-sm relative"> 
     <div class="w-full mx-auto py-2 px-0 flex items-center justify-between relative">
         
-        <!-- Logo alineado a la izquierda -->
         <div class="flex items-center ml-[-12px]">
         <img src="{% static 'img/imagelogo.png' %}" alt="Logo" class="h-14 w-45">
         </div>
 
-        <!-- Título centrado -->
         <h1 class="absolute left-1/2 transform -translate-x-1/2 text-xl font-bold text-white">
         Panel de Control
         </h1>
 
-        <!-- Menú de usuario -->
         <div class="relative mr-5">
         <button id="userMenuButton" class="flex items-center space-x-2 text-white hover:text-gray-200 focus:outline-none">
-            <!-- Icono de usuario -->
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd" d="M10 2a4 4 0 100 8 4 4 0 000-8zM2 16a8 8 0 1116 0H2z" clip-rule="evenodd" />
             </svg>
             <span class="text-sm font-medium">{{ user.username }}</span>
         </button>
 
-        <!-- Menú desplegable -->
         <div id="userDropdown" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg py-2 z-50">
             <form action="{% url 'logout' %}" method="post">
             {% csrf_token %}
             <button type="submit" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
-                <!-- Icono logout -->
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
                 </svg>
@@ -81,7 +74,7 @@
 
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-        <!-- Tarjeta 1 -->
+        <!-- Tarjeta Gestionar Ingredientes -->
         <div class="bg-white shadow-lg rounded-2xl p-6 transition transform hover:scale-[1.03] hover:shadow-xl flex flex-col justify-between">
         <div>
             <div class="flex items-center mb-4">
@@ -95,12 +88,12 @@
             Ir a Ingredientes
         </a>
         </div>
-        <!--Tarjeta 2-->
+
+        <!-- Tarjeta Gestionar Categorias -->
         <div class="bg-white shadow-lg rounded-2xl p-6 transition transform hover:scale-[1.03] hover:shadow-xl flex flex-col justify-between">
         <div>
             <div class="flex items-center mb-4">
             <div class="mr-3">
-                <!-- Icono SVG categoría -->
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-grisOscuro" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
@@ -115,6 +108,7 @@
         </a>
         </div>
 
+        <!-- Tarjeta Gestionar Productos -->
         <div class="bg-white shadow-lg rounded-2xl p-6 transition transform hover:scale-[1.03] hover:shadow-xl flex flex-col justify-between">
         <div>
             <div class="flex items-center mb-4">
@@ -129,7 +123,7 @@
         </a>
         </div>
 
-
+        <!-- Tarjeta Gestionar Usuarios -->
         <div class="bg-white shadow-lg rounded-2xl p-6 transition transform hover:scale-[1.03] hover:shadow-xl flex flex-col justify-between">
         <div>
             <div class="flex items-center mb-4">
@@ -193,7 +187,7 @@
     userDropdown.classList.toggle('hidden');
   });
 
-  // Cerrar el menú si se hace clic fuera
+  //Cierra el menú si se hace click fuera
   document.addEventListener('click', function (e) {
     if (!userMenuBtn.contains(e.target) && !userDropdown.contains(e.target)) {
       userDropdown.classList.add('hidden');

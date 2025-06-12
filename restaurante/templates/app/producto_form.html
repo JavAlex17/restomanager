@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -5,15 +6,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ titulo }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
-        form label { display: block; margin-bottom: 0.25rem; font-weight: 500; color: #374151; }
-        form input, form select, form textarea { display: block; width: 100%; padding: 0.5rem; border: 1px solid #D1D5DB; border-radius: 0.375rem; }
-        form .helptext { font-size: 0.875rem; color: #6B7280; margin-top: 0.25rem; }
-        .form-field-wrapper { margin-bottom: 1rem; }
-        /* Estilos para los checkboxes de ingredientes */
+        .form-field-wrapper { margin-bottom: 1.25rem; }
+        .form-field-wrapper label { display: block; margin-bottom: 0.25rem; font-weight: 500; color: #374151; }
+        .form-field-wrapper input[type="text"],
+        .form-field-wrapper input[type="number"],
+        .form-field-wrapper input[type="file"],
+        .form-field-wrapper select,
+        .form-field-wrapper textarea {
+            width: 100%;
+            border: 1px solid #D1D5DB;
+            border-radius: 0.375rem;
+            padding: 0.75rem;
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            transition: ring 0.2s, border-color 0.2s;
+        }
+        .form-field-wrapper input:focus,
+        .form-field-wrapper select:focus,
+        .form-field-wrapper textarea:focus {
+            outline: none;
+            border-color: #F0A202;
+        }
         .ingredient-checkboxes { max-height: 200px; overflow-y: auto; border: 1px solid #D1D5DB; padding: 1rem; border-radius: 0.375rem; }
         .ingredient-checkboxes label { display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: normal; }
         .ingredient-checkboxes input[type="checkbox"] { width: auto; margin-right: 0.75rem; }
@@ -21,24 +36,54 @@
 </head>
 <body class="bg-gray-50">
 
-    <header class="bg-white shadow-sm">
-        <div class="max-w-4xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex items-center">
-            <a href="{% url 'gestion_productos' %}" class="text-gray-500 hover:text-gray-700 mr-4">&larr;</a>
-            <h1 class="text-2xl font-bold text-gray-900">{{ titulo }}</h1>
+    <header class="bg-[#353535] shadow-sm relative"> 
+        <div class="w-full mx-auto py-2 px-0 flex items-center justify-between relative">
+
+            <div class="flex items-center ml-[-12px]">
+                <img src="{% static 'img/imagelogo.png' %}" alt="Logo" class="h-14 w-45">
+            </div>
+
+            <h1 class="absolute left-1/2 transform -translate-x-1/2 text-xl font-bold text-white">
+                {{ titulo }}
+            </h1>
+
+            <div class="flex items-center space-x-4 mr-5">
+                <a href="{% url 'gestion_productos' %}" class="flex items-center text-white text-sm hover:text-gray-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.707 1.293a1 1 0 00-1.414 0l-8 8A1 1 0 002 10h1v7a1 1 0 001 1h4a1 1 0 001-1v-4h2v4a1 1 0 001 1h4a1 1 0 001-1v-7h1a1 1 0 00.707-1.707l-8-8z" />
+                    </svg>
+                    Volver
+                </a>
+
+                <button id="userMenuButton" class="flex items-center space-x-2 text-white hover:text-gray-200 focus:outline-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 2a4 4 0 100 8 4 4 0 000-8zM2 16a8 8 0 1116 0H2z" clip-rule="evenodd" />
+                    </svg>
+                    <span class="text-sm font-medium">{{ user.username }}</span>
+                </button>
+
+                <div id="userDropdown" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg py-2 z-50">
+                    <form action="{% url 'logout' %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
+                            </svg>
+                            Cerrar sesión
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     </header>
 
     <main class="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div class="bg-white shadow rounded-lg p-8">
-            <!-- 'enctype' es VITAL para que la subida de imágenes funcione -->
+        <div class="bg-white shadow-lg rounded-lg p-8">
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
-
                 {% for field in form %}
                     <div class="form-field-wrapper">
                         {{ field.label_tag }}
-                        
-                        <!-- Lógica especial para mostrar los ingredientes como checkboxes -->
                         {% if field.name == 'ingredientes' %}
                             <div class="ingredient-checkboxes">
                                 {{ field }}
@@ -46,23 +91,29 @@
                         {% else %}
                             {{ field }}
                         {% endif %}
-
-                        {% if field.help_text %}
-                            <p class="helptext">{{ field.help_text }}</p>
-                        {% endif %}
-                        {% for error in field.errors %}
-                            <p class="text-red-500 text-xs italic mt-1">{{ error }}</p>
-                        {% endfor %}
+                        {% if field.help_text %}<p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>{% endif %}
+                        {% for error in field.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
                     </div>
                 {% endfor %}
-
-                <div class="mt-6 flex justify-end">
-                    <a href="{% url 'gestion_productos' %}" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">Cancelar</a>
-                    <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Guardar Producto</button>
+                <div class="mt-8 pt-5 border-t border-gray-200 flex justify-end">
+                    <a href="{% url 'gestion_productos' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-md shadow-sm">Cancelar</a>
+                    <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#F0A202] hover:bg-amber-500">Guardar Producto</button>
                 </div>
             </form>
         </div>
     </main>
 
+    <script>
+        const userMenuButton = document.getElementById('userMenuButton');
+        const userDropdown = document.getElementById('userDropdown');
+        userMenuButton.addEventListener('click', function () {
+            userDropdown.classList.toggle('hidden');
+        });
+        document.addEventListener('click', function (e) {
+            if (!userMenuButton.contains(e.target) && !userDropdown.contains(e.target)) {
+                userDropdown.classList.add('hidden');
+            }
+        });
+    </script>
 </body>
 </html>

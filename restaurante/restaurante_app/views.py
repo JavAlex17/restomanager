@@ -4,7 +4,6 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages 
 from .forms import EncargadoAuthForm
-from django.db.models import ProtectedError
 
 #Se importan los modelos y formularios
 from .models import Producto, Pedido, Usuario, Ingrediente, Categoria, PedidoDetalle
@@ -264,12 +263,9 @@ def editar_categoria_view(request, categoria_id):
 def eliminar_categoria_view(request, categoria_id):
     categoria = get_object_or_404(Categoria, id=categoria_id)
     if request.method == 'POST':
-        try:
-            categoria.delete()
-            messages.success(request, f'Categoría "{categoria.nombre}" eliminada exitosamente.')
-        except ProtectedError:
-            messages.error(request, f'No se puede eliminar la categoría "{categoria.nombre}" porque está siendo usada por uno o más productos.')
-            
+        # La lógica on_delete=SET_NULL se encargará de los productos asociados
+        categoria.delete()
+        messages.success(request, f'Categoría "{categoria.nombre}" eliminada.')
     return redirect('gestion_categorias')
 
 
@@ -484,3 +480,44 @@ def logout_mesa_view(request):
                 return redirect('menu')
     
     return redirect('menu')
+
+#Vista para gestionar los pedidos del camarero
+@login_required
+def pedidos_camarero_view(request):
+    if request.user.rol not in ['CAMARERO', 'ENCARGADO']:
+        messages.error(request, 'No tienes permiso para acceder a esta página.')
+        return redirect('index')
+
+    pedidos_a_gestionar = Pedido.objects.filter(
+        estado__in=['PENDIENTE', 'ENTREGADO', 'CANCELADO']
+    ).order_by('fecha_hora')
+    
+    context = {
+        'pedidos_a_gestionar': pedidos_a_gestionar
+    }
+    return render(request, 'app/pedidos_camarero.html', context)
+
+
+#Acción para actualizar el estado de un pedido
+@login_required
+def actualizar_estado_pedido_view(request, pedido_id):
+    if request.user.rol not in ['CAMARERO', 'ENCARGADO']:
+        messages.error(request, 'No tienes permiso para realizar esta acción.')
+        return redirect('index')
+
+    pedido = get_object_or_404(Pedido, id=pedido_id)
+    
+    if request.method == 'POST':
+        nuevo_estado = request.POST.get('nuevo_estado')
+        
+        if nuevo_estado in ['ENTREGADO', 'CANCELADO', 'PENDIENTE', 'PAGADO']:
+            pedido.estado = nuevo_estado
+            pedido.save()
+            messages.success(request, f'El pedido #{pedido.id} ha sido actualizado a {pedido.get_estado_display()}.')
+        else:
+            messages.error(request, 'El estado seleccionado no es válido.')
+
+    if request.user.rol == 'CAMARERO':
+        return redirect('pedidos_camarero')
+    else:
+        return redirect('dashboard')

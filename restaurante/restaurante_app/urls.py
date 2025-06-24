@@ -34,4 +34,7 @@ urlpatterns = [
 
     path('logout/mesa/', views.logout_mesa_view, name='logout_mesa'),
 
+    path('pedidos/', views.pedidos_camarero_view, name='pedidos_camarero'),
+    path('pedido/actualizar-estado/<int:pedido_id>/', views.actualizar_estado_pedido_view, name='actualizar_estado_pedido'),
+
 ]

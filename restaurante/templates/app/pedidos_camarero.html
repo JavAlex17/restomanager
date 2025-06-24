@@ -1,0 +1,174 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Pedidos - Camarero</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { primario: '#B3001B', secundario: '#F0A202', grisOscuro: '#353535', grisClaro: '#F3F3F4' } } }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-grisClaro">
+
+    <header class="bg-grisOscuro shadow-sm relative">
+        <div class="max-w-screen-xl mx-auto py-2 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+            <div class="flex items-center">
+                <img src="{% static 'img/imagelogo.png' %}" alt="Logo" class="h-14">
+            </div>
+            <h1 class="text-xl font-bold text-white">Pedidos Activos</h1>
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <button id="userMenuButton" class="flex items-center space-x-2 text-white hover:text-gray-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 2a4 4 0 100 8 4 4 0 000-8zM2 16a8 8 0 1116 0H2z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span class="text-sm font-medium">{{ user.username }}</span>
+                    </button>
+                    <div id="userDropdown"
+                        class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                        <form action="{% url 'logout' %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit"
+                                class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
+                                </svg>
+                                Cerrar sesión
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-screen-xl mx-auto py-6 sm:px-6 lg:px-8">
+        {% if messages %}
+        {% for message in messages %}
+        <div class="mb-4 p-4 text-sm rounded-lg {% if message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}"
+            role="alert">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div>
+                <h2 class="text-lg font-bold text-grisOscuro p-3 bg-yellow-200 rounded-t-md">Pendientes (Cocina)</h2>
+                <div class="bg-white rounded-b-md shadow-lg p-4 space-y-4 min-h-[60vh]">
+                    {% for pedido in pedidos_a_gestionar %}{% if pedido.estado == 'PENDIENTE' %}
+                    <div class="border border-gray-200 rounded-lg p-4 shadow-sm">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="font-bold text-gray-800">Pedido #{{ pedido.id }} - Mesa {{
+                                pedido.usuario.username }}</h3>
+                            <span class="text-xs text-gray-500">{{ pedido.fecha_hora|date:"H:i" }}</span>
+                        </div>
+                        <ul class="list-disc pl-5 text-sm text-gray-600 space-y-1">
+                            {% for detalle in pedido.detalles.all %}
+                            <li>{{ detalle.cantidad }}x {{ detalle.producto.nombre }}{% if detalle.observacion %}<span
+                                    class="text-xs italic text-red-600"> - {{ detalle.observacion }}</span>{% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        <div class="mt-4 flex justify-end space-x-2">
+                            <form action="{% url 'actualizar_estado_pedido' pedido.id %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="nuevo_estado" value="CANCELADO">
+                                <button type="submit"
+                                    class="px-3 py-1 bg-red-500 text-white text-sm font-semibold rounded-md hover:bg-red-600">Cancelar</button>
+                            </form>
+                            <form action="{% url 'actualizar_estado_pedido' pedido.id %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="nuevo_estado" value="ENTREGADO">
+                                <button type="submit"
+                                    class="px-3 py-1 bg-green-500 text-white text-sm font-semibold rounded-md hover:bg-green-600">Marcar
+                                    como Entregado</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endif %}{% endfor %}
+                </div>
+            </div>
+
+            <div>
+                <h2 class="text-lg font-bold text-grisOscuro p-3 bg-green-200 rounded-t-md">Entregados (En Mesa)</h2>
+                <div class="bg-white rounded-b-md shadow-lg p-4 space-y-4 min-h-[60vh]">
+                    {% for pedido in pedidos_a_gestionar %}
+                    {% if pedido.estado == 'ENTREGADO' %}
+                    <div class="border border-gray-200 rounded-lg p-4 shadow-sm">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="font-bold text-gray-800">Pedido #{{ pedido.id }} - Mesa {{
+                                pedido.usuario.username }}</h3>
+                            <span class="text-green-600 font-semibold">✓ Entregado</span>
+                        </div>
+                        <p class="text-xs text-gray-400 mb-3">Esperando el pago del cliente.</p>
+
+                        <!-- BOTÓN VISIBLE SOLO PARA EL ENCARGADO -->
+                        {% if user.rol == 'ENCARGADO' %}
+                        <div class="mt-2 flex justify-end">
+                            <form action="{% url 'actualizar_estado_pedido' pedido.id %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="nuevo_estado" value="PAGADO">
+                                <button type="submit"
+                                    class="px-3 py-1 bg-blue-500 text-white text-sm font-semibold rounded-md hover:bg-blue-600">Marcar
+                                    como Pagado</button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+
+            <div>
+                <h2 class="text-lg font-bold text-white p-3 bg-gray-500 rounded-t-md">Cancelados</h2>
+                <div class="bg-white rounded-b-md shadow-lg p-4 space-y-4 min-h-[60vh]">
+                    {% for pedido in pedidos_a_gestionar %}{% if pedido.estado == 'CANCELADO' %}
+                    <div class="border border-red-200 rounded-lg p-4 shadow-sm bg-gray-50">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="font-bold text-gray-500 line-through">Pedido #{{ pedido.id }} - Mesa {{
+                                pedido.usuario.username }}</h3>
+                            <span class="text-red-500 font-semibold">X Cancelado</span>
+                        </div>
+                        <div class="mt-4 flex justify-end">
+                            <form action="{% url 'actualizar_estado_pedido' pedido.id %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="nuevo_estado" value="PENDIENTE">
+                                <button type="submit"
+                                    class="px-3 py-1 bg-blue-500 text-white text-sm font-semibold rounded-md hover:bg-blue-600">Reactivar</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endif %}{% endfor %}
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const userMenuButton = document.getElementById('userMenuButton');
+        const userDropdown = document.getElementById('userDropdown');
+        userMenuButton.addEventListener('click', () => userDropdown.classList.toggle('hidden'));
+        document.addEventListener('click', (e) => {
+            if (!userMenuButton.contains(e.target) && !userDropdown.contains(e.target)) {
+                userDropdown.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+
+</html>

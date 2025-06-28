@@ -1,0 +1,168 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte de Ventas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primario: '#B3001B',
+            secundario: '#F0A202',
+            grisOscuro: '#353535',
+            grisMedio: '#848C8E',
+            grisClaro: '#F3F3F4'
+          }
+        }
+      }
+    }
+  </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Importamos la librería de gráficos Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style> body { font-family: 'Inter', sans-serif; } </style>
+</head>
+<body class="bg-grisClaro">
+    <header class="bg-[#353535] shadow-sm relative"> 
+        <div class="w-full mx-auto py-2 px-0 flex items-center justify-between relative">
+            <div class="flex items-center ml-[-12px]">
+                <img src="{% static 'img/imagelogo.png' %}" alt="Logo" class="h-14 w-45">
+            </div>
+
+            <h1 class="absolute left-1/2 transform -translate-x-1/2 text-xl font-bold text-white">
+                Reporte de Ventas
+            </h1>
+
+            <div class="flex items-center space-x-4 mr-5">
+                <a href="{% url 'dashboard' %}" class="flex items-center text-white text-sm hover:text-gray-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.707 1.293a1 1 0 00-1.414 0l-8 8A1 1 0 002 10h1v7a1 1 0 001 1h4a1 1 0 001-1v-4h2v4a1 1 0 001 1h4a1 1 0 001-1v-7h1a1 1 0 00.707-1.707l-8-8z" />
+                    </svg>
+                    Volver
+                </a>
+
+                <button id="userMenuButton" class="flex items-center space-x-2 text-white hover:text-gray-200 focus:outline-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 2a4 4 0 100 8 4 4 0 000-8zM2 16a8 8 0 1116 0H2z" clip-rule="evenodd" />
+                    </svg>
+                    <span class="text-sm font-medium">{{ user.username }}</span>
+                </button>
+
+                <div id="userDropdown" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg py-2 z-50">
+                    <form action="{% url 'logout' %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
+                            </svg>
+                            Cerrar sesión
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="mb-6 flex justify-between items-center">
+            <div>
+                <h2 class="text-2xl font-bold text-grisOscuro">Reporte de Ventas</h2>
+                <p class="text-sm text-gray-500">
+                    Mostrando resultados para el período: {{ fecha_inicio|date:"d M Y" }} - {{ fecha_fin|date:"d M Y" }}
+                </p>
+            </div>
+            <div class="flex space-x-2">
+                <a href="?periodo=hoy" class="px-4 py-2 text-sm rounded-md {% if periodo_seleccionado == 'hoy' %}bg-secundario text-grisOscuro font-bold{% else %}bg-white shadow-sm{% endif %}">Hoy</a>
+                <a href="?periodo=semana" class="px-4 py-2 text-sm rounded-md {% if periodo_seleccionado == 'semana' %}bg-secundario text-grisOscuro font-bold{% else %}bg-white shadow-sm{% endif %}">Semana</a>
+                <a href="?periodo=mes" class="px-4 py-2 text-sm rounded-md {% if periodo_seleccionado == 'mes' %}bg-secundario text-grisOscuro font-bold{% else %}bg-white shadow-sm{% endif %}">Mes</a>
+                <a href="?periodo=año" class="px-4 py-2 text-sm rounded-md {% if periodo_seleccionado == 'año' %}bg-secundario text-grisOscuro font-bold{% else %}bg-white shadow-sm{% endif %}">Año</a>
+            </div>
+        </div>
+
+        <!-- Tarjetas con métricas principales -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                <h4 class="text-sm font-medium text-gray-500">Ventas Totales</h4>
+                <p class="text-3xl font-bold text-grisOscuro mt-1">${{ total_ventas|floatformat:0 }}</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                <h4 class="text-sm font-medium text-gray-500">Nº de Pedidos Pagados</h4>
+                <p class="text-3xl font-bold text-grisOscuro mt-1">{{ num_pedidos }}</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                <h4 class="text-sm font-medium text-gray-500">Ticket Promedio</h4>
+                <p class="text-3xl font-bold text-grisOscuro mt-1">${{ ticket_promedio|floatformat:0 }}</p>
+            </div>
+        </div>
+
+        <!-- Gráfico y Top Productos -->
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            <div class="lg:col-span-3 bg-white p-6 rounded-lg shadow-md">
+                <h4 class="font-semibold mb-4">Ventas por Día</h4>
+                <canvas id="salesChart"></canvas>
+            </div>
+            <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-md">
+                <h4 class="font-semibold mb-4">Top 5 Productos Vendidos</h4>
+                <ul class="space-y-3">
+                    {% for producto in top_productos %}
+                    <li class="flex justify-between items-center text-sm">
+                        <span class="text-gray-700">{{ producto.producto__nombre }}</span>
+                        <span class="font-bold bg-gray-200 px-2 py-1 rounded">{{ producto.total_vendido }} uds.</span>
+                    </li>
+                    {% empty %}
+                    <p class="text-sm text-gray-500">No hay datos de ventas para este período.</p>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <!-- SCRIPT DEL GRÁFICO ACTUALIZADO -->
+    <script>
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    
+    // Primero, obtenemos los datos JSON desde el HTML. El filtro 'safe' es crucial.
+    const labelsJson = '{{ chart_labels|safe }}';
+    const dataJson = '{{ chart_data|safe }}';
+
+    // Luego, usamos JSON.parse para convertir esos strings a arrays de JavaScript.
+    // Esto es mucho más seguro y robusto.
+    const chartLabels = JSON.parse(labelsJson);
+    const chartData = JSON.parse(dataJson);
+
+    // Si no hay datos, mostramos un mensaje en lugar de un gráfico vacío.
+    if (chartData.length === 0) {
+        const canvas = document.getElementById('salesChart');
+        const parent = canvas.parentElement;
+        canvas.remove();
+        parent.innerHTML = '<p class="text-center text-gray-500 mt-10">No hay datos de ventas para mostrar en este período.</p>';
+    } else {
+        const salesChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    label: 'Ventas ($)',
+                    data: chartData,
+                    backgroundColor: 'rgba(240, 162, 2, 0.6)',
+                    borderColor: 'rgba(240, 162, 2, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+</script>
+
+</body>
+</html>

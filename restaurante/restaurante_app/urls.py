@@ -41,4 +41,6 @@ urlpatterns = [
     path('dashboard/turnos/editar/<int:turno_id>/', views.editar_turno_view, name='editar_turno'),
     path('dashboard/turnos/eliminar/<int:turno_id>/', views.eliminar_turno_view, name='eliminar_turno'),
 
+    path('dashboard/reportes/ventas/', views.reporte_ventas_view, name='reporte_ventas'),
+
 ]

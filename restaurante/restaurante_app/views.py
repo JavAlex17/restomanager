@@ -2,13 +2,18 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
-from django.contrib import messages 
+from django.contrib import messages
+from django.db.models import Sum, Count
+from django.db.models.functions import TruncDate
+from django.utils import timezone 
+from datetime import timedelta
 from .forms import EncargadoAuthForm
 
 #Se importan los modelos y formularios
 from .models import Producto, Pedido, Usuario, Ingrediente, Categoria, PedidoDetalle, Turno
 from .forms import UsuarioCreationForm, ProductoForm, IngredienteForm, CategoriaForm, TurnoForm
 import uuid
+import json
 
 #Se verifica si el usuario logueado tiene el rol de encargado
 def staff_required(view_func):
@@ -85,17 +90,6 @@ def dashboard_encargado_view(request):
     }
     return render(request, 'app/dashboard.html', context)
 
-#Panel para los camareros
-@login_required
-def pedidos_camarero_view(request):
-    if request.user.rol != 'CAMARERO':
-        return redirect('index')
-
-    pedidos_activos = Pedido.objects.filter(estado__in=['PENDIENTE', 'EN_PROCESO']).order_by('fecha_hora')
-    context = {
-        'pedidos_activos': pedidos_activos
-    }
-    return render(request, 'app/pedidos_camarero.html', context)
 
 #Vista de gestion de usuarios
 @login_required
@@ -565,3 +559,65 @@ def eliminar_turno_view(request, turno_id):
         turno.delete()
         messages.success(request, 'El turno ha sido eliminado.')
     return redirect('gestion_turnos')
+
+#Vista para generar un reporte de ventas
+@staff_required
+def reporte_ventas_view(request):
+    periodo = request.GET.get('periodo', 'hoy')
+    
+    hoy = timezone.now().date()
+    # Lógica para definir fecha_inicio y fecha_fin (sin cambios)
+    if periodo == 'semana':
+        fecha_inicio = hoy - timedelta(days=hoy.weekday())
+        fecha_fin = fecha_inicio + timedelta(days=7)
+    elif periodo == 'mes':
+        fecha_inicio = hoy.replace(day=1)
+        fecha_fin = (fecha_inicio + timedelta(days=32)).replace(day=1)
+    elif periodo == 'año':
+        fecha_inicio = hoy.replace(month=1, day=1)
+        fecha_fin = hoy.replace(year=hoy.year + 1, month=1, day=1)
+    else: 
+        fecha_inicio = hoy
+        fecha_fin = hoy + timedelta(days=1)
+
+    pedidos_pagados = Pedido.objects.filter(
+        estado='PAGADO', 
+        fecha_hora__gte=fecha_inicio, 
+        fecha_hora__lt=fecha_fin
+    )
+    
+    # Cálculos de métricas (sin cambios)
+    total_ventas = pedidos_pagados.aggregate(Sum('monto_total'))['monto_total__sum'] or 0
+    num_pedidos = pedidos_pagados.count()
+    ticket_promedio = total_ventas / num_pedidos if num_pedidos > 0 else 0
+    top_productos = (PedidoDetalle.objects.filter(pedido__in=pedidos_pagados)
+        .values('producto__nombre')
+        .annotate(total_vendido=Sum('cantidad'))
+        .order_by('-total_vendido')[:5])
+
+    # Lógica para agrupar ventas por día (sin cambios)
+    ventas_por_dia = (pedidos_pagados
+        .annotate(dia=TruncDate('fecha_hora'))
+        .values('dia')
+        .annotate(total_diario=Sum('monto_total'))
+        .order_by('dia')
+    )
+    
+    chart_labels = [item['dia'].strftime("%d %b") for item in ventas_por_dia]
+    chart_data = [int(item['total_diario']) for item in ventas_por_dia]
+
+    context = {
+        'total_ventas': total_ventas,
+        'num_pedidos': num_pedidos,
+        'ticket_promedio': ticket_promedio,
+        'top_productos': top_productos,
+        'periodo_seleccionado': periodo,
+        'fecha_inicio': fecha_inicio,
+        'fecha_fin': fecha_fin - timedelta(days=1),
+        
+        # --- PARTE CLAVE CORREGIDA ---
+        # Convertimos las listas de Python a un string con formato JSON
+        'chart_labels': json.dumps(chart_labels),
+        'chart_data': json.dumps(chart_data),
+    }
+    return render(request, 'app/reporte_ventas.html', context)

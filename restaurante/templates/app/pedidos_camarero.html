@@ -89,13 +89,12 @@
         {% endif %}
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div>
-                <h2 class="text-lg font-bold text-grisOscuro p-3 bg-yellow-200 rounded-t-md">Pendientes (Cocina)</h2>
+                <h2 class="text-lg font-bold text-grisOscuro p-3 bg-yellow-200 rounded-t-md">Pendientes</h2>
                 <div class="bg-white rounded-b-md shadow-lg p-4 space-y-4 min-h-[60vh]">
                     {% for pedido in pedidos_a_gestionar %}{% if pedido.estado == 'PENDIENTE' %}
                     <div class="border border-gray-200 rounded-lg p-4 shadow-sm">
                         <div class="flex justify-between items-center mb-2">
-                            <h3 class="font-bold text-gray-800">Pedido #{{ pedido.id }} - Mesa {{
-                                pedido.usuario.username }}</h3>
+                            <h3 class="font-bold text-gray-800">Pedido #{{ pedido.id }} - Mesa {{ pedido.usuario.username }}</h3>
                             <span class="text-xs text-gray-500">{{ pedido.fecha_hora|date:"H:i" }}</span>
                         </div>
                         <ul class="list-disc pl-5 text-sm text-gray-600 space-y-1">
@@ -126,14 +125,13 @@
             </div>
 
             <div>
-                <h2 class="text-lg font-bold text-grisOscuro p-3 bg-green-200 rounded-t-md">Entregados (En Mesa)</h2>
+                <h2 class="text-lg font-bold text-grisOscuro p-3 bg-green-200 rounded-t-md">Entregados</h2>
                 <div class="bg-white rounded-b-md shadow-lg p-4 space-y-4 min-h-[60vh]">
                     {% for pedido in pedidos_a_gestionar %}
                     {% if pedido.estado == 'ENTREGADO' %}
                     <div class="border border-gray-200 rounded-lg p-4 shadow-sm">
                         <div class="flex justify-between items-center mb-2">
-                            <h3 class="font-bold text-gray-800">Pedido #{{ pedido.id }} - Mesa {{
-                                pedido.usuario.username }}</h3>
+                            <h3 class="font-bold text-gray-800">Pedido #{{ pedido.id }} - Mesa {{ pedido.usuario.username }}</h3>
                             <span class="text-green-600 font-semibold">✓ Entregado</span>
                         </div>
                         <p class="text-xs text-gray-400 mb-3">Esperando el pago del cliente.</p>
@@ -145,8 +143,7 @@
                                 {% csrf_token %}
                                 <input type="hidden" name="nuevo_estado" value="PAGADO">
                                 <button type="submit"
-                                    class="px-3 py-1 bg-blue-500 text-white text-sm font-semibold rounded-md hover:bg-blue-600">Marcar
-                                    como Pagado</button>
+                                    class="px-3 py-1 bg-blue-500 text-white text-sm font-semibold rounded-md hover:bg-blue-600">Marcar como Pagado</button>
                             </form>
                         </div>
                         {% endif %}

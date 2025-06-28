@@ -1,5 +1,6 @@
 from django import forms
-from .models import Usuario, Producto, Ingrediente, Categoria
+from .models import Usuario, Producto, Ingrediente, Categoria, Turno
+from django.utils import timezone
 import re
 
 #Validador para nombres de usuario
@@ -69,3 +70,41 @@ class EncargadoAuthForm(forms.Form):
         widget=forms.PasswordInput(attrs={'placeholder': 'Contraseña del encargado', 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md'}), 
         label="Contraseña de Encargado"
     )
+
+#Formulario para crear un turno
+class TurnoForm(forms.ModelForm):
+    camarero = forms.ModelChoiceField(
+        queryset=Usuario.objects.filter(rol='CAMARERO').order_by('username'),
+        label="Camarero"
+    )
+    
+    class Meta:
+        model = Turno
+        fields = ['camarero', 'fecha_inicio', 'fecha_fin']
+
+        widgets = {
+            'fecha_inicio': forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
+            'fecha_fin': forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
+        }
+    
+    def clean_fecha_inicio(self):
+        """
+        Valida que la fecha de inicio no sea anterior al día y hora actuales.
+        """
+        fecha_inicio = self.cleaned_data.get('fecha_inicio')
+        
+        # Comparamos solo si la fecha no está vacía
+        if fecha_inicio and fecha_inicio < timezone.now():
+            raise forms.ValidationError("La fecha de inicio del turno no puede ser en el pasado.")
+            
+        return fecha_inicio
+
+    def clean(self):
+        cleaned_data = super().clean()
+        fecha_inicio = cleaned_data.get("fecha_inicio")
+        fecha_fin = cleaned_data.get("fecha_fin")
+
+        if fecha_inicio and fecha_fin and fecha_fin <= fecha_inicio:
+            raise forms.ValidationError("La fecha de finalización debe ser posterior a la fecha de inicio.")
+            
+        return cleaned_data

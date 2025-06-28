@@ -147,12 +147,12 @@
           </a>
         </div>
 
-        <!-- Tarjeta Ver Pedidos (Camarero) -->
+        <!-- Tarjeta Ver Pedidos -->
         <div
           class="bg-white shadow-lg rounded-2xl p-6 transition transform hover:scale-[1.03] hover:shadow-xl flex flex-col justify-between">
           <div>
             <div class="flex items-center mb-4">
-            <div class="text-3xl mr-3">📦</div>
+            <div class="text-3xl mr-3">🧾</div>
             <h3 class="text-lg font-semibold text-grisOscuro">Ver Pedidos</h3>
           </div>
             <p class="text-sm text-grisMedio mb-4">Revisa los pedidos pendientes y entregados.</p>
@@ -160,6 +160,22 @@
           <a href="{% url 'pedidos_camarero' %}"
             class="mt-4 inline-block text-center bg-[#F0A202] text-[#353535] text-sm font-semibold px-4 py-2 rounded-lg transition hover:brightness-105">
             Ir a Pedidos Activos
+          </a>
+        </div>
+
+        <!-- Tarjeta Gestionar Turnos -->
+        <div
+          class="bg-white shadow-lg rounded-2xl p-6 transition transform hover:scale-[1.03] hover:shadow-xl flex flex-col justify-between">
+          <div>
+            <div class="flex items-center mb-4">
+            <div class="text-3xl mr-3">🗓️</div>
+            <h3 class="text-lg font-semibold text-grisOscuro">Gestión de Turnos</h3>
+          </div>
+            <p class="text-sm text-grisMedio mb-4">Crea, edita y elimina los turnos de los empleados.</p>
+          </div>
+          <a href="{% url 'gestion_turnos' %}"
+            class="mt-4 inline-block text-center bg-[#F0A202] text-[#353535] text-sm font-semibold px-4 py-2 rounded-lg transition hover:brightness-105">
+            Ir a Turnos
           </a>
         </div>
       </div>
@@ -209,7 +225,6 @@
       userDropdown.classList.toggle('hidden');
     });
 
-    //Cierra el menú si se hace click fuera
     document.addEventListener('click', function (e) {
       if (!userMenuBtn.contains(e.target) && !userDropdown.contains(e.target)) {
         userDropdown.classList.add('hidden');

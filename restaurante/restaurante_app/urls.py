@@ -37,4 +37,8 @@ urlpatterns = [
     path('pedidos/', views.pedidos_camarero_view, name='pedidos_camarero'),
     path('pedido/actualizar-estado/<int:pedido_id>/', views.actualizar_estado_pedido_view, name='actualizar_estado_pedido'),
 
+    path('dashboard/turnos/', views.gestion_turnos_view, name='gestion_turnos'),
+    path('dashboard/turnos/editar/<int:turno_id>/', views.editar_turno_view, name='editar_turno'),
+    path('dashboard/turnos/eliminar/<int:turno_id>/', views.eliminar_turno_view, name='eliminar_turno'),
+
 ]

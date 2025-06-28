@@ -82,3 +82,24 @@ class PedidoDetalle(models.Model):
     observacion = models.TextField(blank=True)
     def __str__(self):
         return f"{self.cantidad} x {self.producto.nombre} (Pedido #{self.pedido.id})"
+
+
+class Turno(models.Model):
+    """
+    Representa un turno de trabajo para un camarero.
+    """
+    camarero = models.ForeignKey(
+        Usuario, 
+        on_delete=models.CASCADE, 
+        limit_choices_to={'rol': 'CAMARERO'},
+        help_text="Camarero asignado a este turno."
+    )
+    fecha_inicio = models.DateTimeField(help_text="Fecha y hora de inicio del turno.")
+    fecha_fin = models.DateTimeField(help_text="Fecha y hora de finalización del turno.")
+    
+    class Meta:
+        # Ordena los turnos por fecha de inicio, del más reciente al más antiguo
+        ordering = ['-fecha_inicio']
+
+    def __str__(self):
+        return f"Turno de {self.camarero.username} - {self.fecha_inicio.strftime('%d/%m/%Y %H:%M')}"

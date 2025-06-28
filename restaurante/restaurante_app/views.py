@@ -6,8 +6,8 @@ from django.contrib import messages
 from .forms import EncargadoAuthForm
 
 #Se importan los modelos y formularios
-from .models import Producto, Pedido, Usuario, Ingrediente, Categoria, PedidoDetalle
-from .forms import UsuarioCreationForm, ProductoForm, IngredienteForm, CategoriaForm
+from .models import Producto, Pedido, Usuario, Ingrediente, Categoria, PedidoDetalle, Turno
+from .forms import UsuarioCreationForm, ProductoForm, IngredienteForm, CategoriaForm, TurnoForm
 import uuid
 
 #Se verifica si el usuario logueado tiene el rol de encargado
@@ -521,3 +521,47 @@ def actualizar_estado_pedido_view(request, pedido_id):
         return redirect('pedidos_camarero')
     else:
         return redirect('dashboard')
+
+
+#Vista para gestionar turnos
+@staff_required
+def gestion_turnos_view(request):
+    if request.method == 'POST':
+        form = TurnoForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Turno creado exitosamente.')
+            return redirect('gestion_turnos')
+    else:
+        form = TurnoForm()
+
+    turnos = Turno.objects.all()
+    context = {
+        'turnos': turnos,
+        'form': form
+    }
+    return render(request, 'app/gestion_turnos.html', context)
+
+#Vista para editar un turno existente
+@staff_required
+def editar_turno_view(request, turno_id):
+    turno = get_object_or_404(Turno, id=turno_id)
+    if request.method == 'POST':
+        form = TurnoForm(request.POST, instance=turno)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Turno actualizado exitosamente.')
+            return redirect('gestion_turnos')
+    else:
+        form = TurnoForm(instance=turno)
+        
+    return render(request, 'app/turno_form.html', {'form': form, 'turno': turno})
+
+#Acción para eliminar un turno
+@staff_required
+def eliminar_turno_view(request, turno_id):
+    turno = get_object_or_404(Turno, id=turno_id)
+    if request.method == 'POST':
+        turno.delete()
+        messages.success(request, 'El turno ha sido eliminado.')
+    return redirect('gestion_turnos')

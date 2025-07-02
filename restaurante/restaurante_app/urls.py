@@ -43,4 +43,6 @@ urlpatterns = [
 
     path('dashboard/reportes/ventas/', views.reporte_ventas_view, name='reporte_ventas'),
 
+    path('api/validar_garzon_code/', views.validar_garzon_code, name='validar_garzon_code'),
+
 ]

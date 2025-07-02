@@ -8,6 +8,9 @@ from django.db.models.functions import TruncDate
 from django.utils import timezone 
 from datetime import timedelta
 from .forms import EncargadoAuthForm
+# --- ¡NECESITAS ESTA IMPORTACIÓN! ---
+from django.http import JsonResponse 
+# ------------------------------------
 
 #Se importan los modelos y formularios
 from .models import Producto, Pedido, Usuario, Ingrediente, Categoria, PedidoDetalle, Turno
@@ -621,3 +624,24 @@ def reporte_ventas_view(request):
         'chart_data': json.dumps(chart_data),
     }
     return render(request, 'app/reporte_ventas.html', context)
+
+def validar_garzon_code(request):
+    if request.method == 'POST':
+        try:
+            # Asegúrate de que el request.body sea un JSON válido
+            data = json.loads(request.body)
+            code = data.get('code')
+            
+            # Buscar un usuario (camarero) con ese código secreto
+            # Asumiendo que 'codigo_secreto_camarero' es el campo en tu modelo Usuario
+            is_valid = Usuario.objects.filter(
+                rol='CAMARERO',
+                codigo_secreto_camarero=code
+            ).exists()
+            
+            return JsonResponse({'success': is_valid})
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+    return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)

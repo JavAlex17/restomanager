@@ -21,6 +21,8 @@ class Usuario(AbstractUser):
     last_name = None
     ROL_CHOICES = (('MESA', 'Mesa'), ('ENCARGADO', 'Encargado'), ('CAMARERO', 'Camarero'))
     rol = models.CharField(max_length=10, choices=ROL_CHOICES, default='MESA')
+    codigo_secreto_camarero = models.CharField(max_length=10, blank=True, null=True, unique=True, help_text="Código secreto para camareros (4 dígitos)")
+
     objects = UsuarioManager()
     def __str__(self):
         return f"{self.username} ({self.get_rol_display()})"

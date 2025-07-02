@@ -7,17 +7,17 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
-          theme: {
-            extend: {
-              colors: {
-                primario: '#B3001B',
-                secundario: '#F0A202',
-                grisOscuro: '#353535',
-                grisMedio: '#848C8E',
-                grisClaro: '#F3F3F4'
-              }
+            theme: {
+                extend: {
+                    colors: {
+                        primario: '#B3001B',
+                        secundario: '#F0A202',
+                        grisOscuro: '#353535',
+                        grisMedio: '#848C8E',
+                        grisClaro: '#F3F3F4'
+                    }
+                }
             }
-          }
         }
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -31,15 +31,15 @@
 
 <body class="bg-grisClaro">
 
-    <header class="bg-[#353535] shadow-sm relative"> 
+    <header class="bg-[#353535] shadow-sm relative">
         <div class="w-full mx-auto py-2 px-0 flex items-center justify-between relative">
             <div class="flex items-center ml-[-12px]">
                 <img src="{% static 'img/imagelogo.png' %}" alt="Logo" class="h-14 w-45">
             </div>
 
             <div class="text-center">
-            <h1 class="text-xl font-bold text-white">Nuestro Menú</h1>
-            <p class="text-xs text-gray-300">Mesa: <span class="font-semibold">{{ mesa_nombre }}</span></p>
+                <h1 class="text-xl font-bold text-white">Nuestro Menú</h1>
+                <p class="text-xs text-gray-300">Mesa: <span class="font-semibold">{{ mesa_nombre }}</span></p>
             </div>
 
             <div class="flex items-center space-x-4 mr-5">
@@ -48,7 +48,7 @@
                 </a>
 
                 <button type="button" onclick="openLogoutModal()" class="p-2 bg-gray-700 rounded-full text-white hover:bg-gray-600" title="Salir">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 012-2V7a2 2 0 012-2h6a2 2 0 012 2v1" /></svg>
                 </button>
             </div>
         </div>
@@ -60,7 +60,7 @@
             <div class="mb-4 p-4 text-sm rounded-lg bg-green-100 text-green-800" role="alert">{{ message }}</div>
             {% endfor %}
         {% endif %}
-        
+
         {% regroup productos by categoria as categorias_list %}
         {% for categoria in categorias_list %}
             <div class="mb-12">
@@ -75,26 +75,29 @@
                                     <p class="text-xl font-bold text-secundario">${{ producto.precio }}</p>
                                 </div>
                                 <p class="text-grisMedio text-sm mb-4 flex-grow">{{ producto.descripcion }}</p>
-                                <button data-product-id="{{ producto.id }}" onclick="openModal(this)" class="mt-auto w-full bg-grisOscuro text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors">Añadir al Pedido</button>
+                                <button data-product-id="{{ producto.id }}" data-category-name="{{ producto.categoria.nombre }}" onclick="handleProductClick(this)" class="mt-auto w-full bg-grisOscuro text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors">Añadir al Pedido</button>
                             </div>
                         </div>
-                        
-                        <div id="modal-{{ producto.id }}" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-30 hidden" onclick="closeModal(this, event)" data-base-price="{{ producto.precio }}">
+
+                        {# --- UN SOLO MODAL DE PERSONALIZACIÓN, ADAPTADO SEGÚN LA CATEGORÍA --- #}
+                        <div id="modal-{{ producto.id }}" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-30 hidden" onclick="closeModal(this, event)" data-base-price="{{ producto.precio }}" data-category="{{ producto.categoria.nombre }}">
                             <div class="modal-container bg-white rounded-lg shadow-xl w-full max-w-lg transform transition-all">
                                 <form action="{% url 'anadir_al_pedido' producto.id %}" method="post">
-                                    {% csrf_token %}
+                                    {% csrf_token %} {# ¡Importante para la seguridad de los formularios Django! #}
                                     <div class="p-6">
                                         <h3 class="text-2xl font-bold mb-2">{{ producto.nombre }}</h3>
                                         <div class="flex items-center justify-between my-4">
                                             <label class="font-semibold text-gray-800">Cantidad:</label>
                                             <div class="flex items-center border rounded-md">
                                                 <button type="button" onclick="changeQuantity(this, -1)" class="bg-gray-200 text-gray-700 rounded-l-md px-3 py-1 font-bold text-lg">-</button>
-                                                <input type="number" name="cantidad" value="1" readonly class="w-12 text-center font-semibold border-t border-b focus:outline-none">
+                                                <input type="number" name="cantidad" value="1" class="w-12 text-center font-semibold border-t border-b focus:outline-none">
                                                 <button type="button" onclick="changeQuantity(this, 1)" class="bg-gray-200 text-gray-700 rounded-r-md px-3 py-1 font-bold text-lg">+</button>
                                             </div>
                                         </div>
-                                        {% if producto.categoria and producto.categoria.nombre != "Bebidas" %}
-                                            <h4 class="font-semibold mb-2">Personaliza tu platillo:</h4>
+
+                                        {# Solo mostramos la sección de ingredientes y observaciones si NO es una bebida ni alcohol #}
+                                        {% if producto.categoria and producto.categoria.nombre != "Bebidas" and producto.categoria.nombre != "Cervezas" and producto.categoria.nombre != "Bebidas Alcohólicas" %}
+                                            <h4 class="font-semibold mt-4 mb-2">Personaliza tu platillo:</h4>
                                             <div class="space-y-2 max-h-48 overflow-y-auto border p-3 rounded-md">
                                                 {% for ingrediente in all_ingredients %}
                                                 <label class="flex items-center">
@@ -115,13 +118,15 @@
                                 </form>
                             </div>
                         </div>
+                        {# --- FIN DEL MODAL ADAPTADO --- #}
+
                     {% endfor %}
                 </div>
             </div>
         {% endfor %}
     </main>
 
-    <!-- Modal para cerrar sesión -->
+    {# --- MODAL DE AUTORIZACIÓN DEL LOGOUT DE MESA --- #}
     <div id="logoutModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-30 hidden">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-sm">
             <div class="p-6">
@@ -140,69 +145,140 @@
                         </div>
                     </div>
                     <div class="mt-6 flex justify-end space-x-3">
-                        <button type="button" onclick="closeLogoutModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">Cancelar</button>
-                        <button type="submit" class="px-4 py-2 bg-primario text-white rounded-md hover:bg-red-700">Autorizar Salida</button>
+                        <button type="button" onclick="closeLogoutModal()" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-400 mr-3">Cancelar</button>
+                        <button type="submit" class="bg-primario text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700">Autorizar Salida</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
+    {# --- MODAL DE AUTORIZACIÓN DEL GARZÓN PARA PRODUCTOS RESTRINGIDOS --- #}
+    <div id="garzonAuthModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-40 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-sm">
+            <div class="p-6 text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto mb-4 h-12 w-12 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 0a6 6 0 1112 0v2H6v-2zM9 11a3 3 0 116 0v2H9v-2z" />
+                </svg>
+
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Producto Restringido</h3>
+                <p class="text-sm text-gray-600 mb-4" id="garzonAuthMessage">Para añadir este producto, comunícate con el Garzón más cercano.</p>
+
+                <div class="space-y-4">
+                    <div>
+                        <label for="garzon_code" class="sr-only">Código del Garzón</label>
+                        <input type="password" id="garzon_code" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Código del Garzón" />
+                        <p id="garzon_error_message" class="text-red-500 text-xs mt-1 hidden">Código incorrecto. Intenta de nuevo.</p>
+                    </div>
+                </div>
+
+                <p class="text-xs text-gray-500 mt-1 italic">Conforme a la Ley N° 19.925 sobre expendio y consumo de bebidas alcohólicas en Chile, la venta de alcohol está prohibida a menores de 18 años.</p>
+
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" onclick="closeGarzonAuthModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">Cancelar</button>
+                    <button type="button" id="garzonAuthButton" onclick="validateGarzonCode()" class="px-4 py-2 bg-secundario text-grisOscuro rounded-md hover:bg-amber-500">Desbloquear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <script>
-        function openModal(button) {
-            const productId = button.dataset.productId;
+        // Variables globales para almacenar el producto actual que activa el modal de garzón
+        let currentProductId = null; 
+        let currentProductCategory = null; 
+
+        /**
+         * Abre el modal de personalización del producto.
+         * @param {string} productId - El ID del producto.
+         */
+        const VALID_GARZON_CODES = ["1234", "5678", "9999"];
+        function openModal(productId) {
             const modal = document.getElementById(`modal-${productId}`);
-            if (!modal) return;
+            if (!modal) {
+                console.error(`Modal for product ID ${productId} not found.`);
+                return;
+            }
+            // Restablece la cantidad a 1 al abrir el modal
             const quantityInput = modal.querySelector('input[name="cantidad"]');
             if (quantityInput) { quantityInput.value = 1; }
             modal.classList.remove('hidden');
-            updateModalPrice(modal.querySelector('input[name="cantidad"]')); // Actualizar precio al abrir
+            // Asegura que el precio inicial se muestre correctamente
+            updateModalPrice(modal.querySelector('input[name="cantidad"]')); 
         }
 
+        /**
+         * Cierra un modal si el clic se realiza fuera de su contenido.
+         * @param {HTMLElement} modal - El elemento del modal (el overlay).
+         * @param {Event} event - El evento de clic.
+         */
         function closeModal(modal, event) {
+            // Solo cierra si el clic fue directamente sobre el overlay y no en el contenido del modal
             if (event.target === modal) {
                 modal.classList.add('hidden');
             }
         }
 
+        /**
+         * Cierra un modal al hacer clic en un botón de cancelar dentro de él.
+         * @param {HTMLElement} button - El botón que activó el cierre.
+         */
         function closeModalByButton(button) {
-            const modal = button.closest('.modal-overlay');
-            if (modal) { modal.classList.add('hidden'); }
+            const modal = button.closest('.modal-overlay'); // Encuentra el modal padre
+            if (modal) { 
+                modal.classList.add('hidden'); 
+            }
         }
 
+        /**
+         * Cambia la cantidad de un producto en el modal de personalización y actualiza el precio.
+         * @param {HTMLElement} button - El botón de incremento o decremento.
+         * @param {number} amount - La cantidad a añadir o restar (1 o -1).
+         */
         function changeQuantity(button, amount) {
             const input = button.parentElement.querySelector('input[name="cantidad"]');
             let newValue = parseInt(input.value) + amount;
-            if (newValue < 1) { newValue = 1; }
+            if (newValue < 1) { 
+                newValue = 1; // La cantidad mínima es 1
+            }
             input.value = newValue;
-            updateModalPrice(input); //Recalcula el precio cuando cambia la cantidad
+            updateModalPrice(input); // Recalcula el precio cuando cambia la cantidad
         }
 
+        /**
+         * Actualiza el precio total mostrado en el modal de personalización del producto.
+         * Considera la cantidad y el costo de ingredientes extra (si no es bebida/alcohol).
+         * @param {HTMLElement} element - Un elemento dentro del modal que disparó la actualización (e.g., input de cantidad o checkbox de ingrediente).
+         */
         function updateModalPrice(element) {
             const modal = element.closest('.modal-overlay');
-            if (!modal) return;
-            
-            const productId = modal.id.split('-')[1];
-            const basePrice = parseFloat(modal.dataset.basePrice);
-            const quantity = parseInt(modal.querySelector('input[name="cantidad"]').value);
-            const priceDisplay = modal.querySelector(`#price-display-${productId}`);
-            
+            if (!modal) return; // Si no se encuentra el modal, salir
+
+            const productId = modal.id.split('-')[1]; // Extrae el ID del producto del ID del modal
+            const basePrice = parseFloat(modal.dataset.basePrice); // Precio base del producto
+            const quantity = parseInt(modal.querySelector('input[name="cantidad"]').value); // Cantidad actual
+            const priceDisplay = modal.querySelector(`#price-display-${productId}`); // Elemento donde se muestra el precio
+            const category = modal.dataset.category; // Categoría del producto
+
             let extraCost = 0;
-            const ingredientCheckboxes = modal.querySelectorAll('input[name="ingredientes"]');
-            
-            ingredientCheckboxes.forEach(checkbox => {
-                if (checkbox.checked && checkbox.dataset.base === 'false') {
-                    extraCost += parseFloat(checkbox.dataset.price);
-                }
-            });
-            
+            // Solo calcula costos extra si el producto NO es de las categorías de bebida/alcohol
+            if (category !== "Bebidas" && category !== "Alcohol" && category !== "Bebidas Alcohólicas") {
+                const ingredientCheckboxes = modal.querySelectorAll('input[name="ingredientes"]');
+                ingredientCheckboxes.forEach(checkbox => {
+                    // Si el ingrediente está marcado y NO es un ingrediente base del producto
+                    if (checkbox.checked && checkbox.dataset.base === 'false') {
+                        extraCost += parseFloat(checkbox.dataset.price);
+                    }
+                });
+            }
+
             const finalPricePerUnit = basePrice + extraCost;
             const totalPrice = finalPricePerUnit * quantity;
-            
-            priceDisplay.textContent = `$${totalPrice.toFixed(0)}`;
+
+            priceDisplay.textContent = `$${totalPrice.toFixed(0)}`; // Muestra el precio formateado sin decimales
         }
 
+        // --- Funciones para el modal de Cierre de Sesión ---
         const logoutModal = document.getElementById('logoutModal');
         function openLogoutModal() {
             if (logoutModal) logoutModal.classList.remove('hidden');
@@ -210,6 +286,79 @@
         function closeLogoutModal() {
             if (logoutModal) logoutModal.classList.add('hidden');
         }
+
+        // --- Funciones y lógica para el modal de Autorización del Garzón ---
+        const garzonAuthModal = document.getElementById('garzonAuthModal');
+        const garzonCodeInput = document.getElementById('garzon_code');
+        const garzonErrorMessage = document.getElementById('garzon_error_message');
+        const garzonAuthButton = document.getElementById('garzonAuthButton');
+        const garzonAuthMessage = document.getElementById('garzonAuthMessage');
+
+        /**
+         * Maneja el clic en el botón "Añadir al Pedido" de un producto.
+         * Determina si se abre el modal de autorización del garzón (para alcohol) o el de personalización.
+         * @param {HTMLElement} button - El botón "Añadir al Pedido" que fue clickeado.
+         */
+        function handleProductClick(button) {
+            currentProductId = button.dataset.productId; // Guarda el ID del producto
+            currentProductCategory = button.dataset.categoryName; // Guarda la categoría del producto
+
+            // Si la categoría es Alcohol o Bebidas Alcohólicas, requiere autorización
+            if (currentProductCategory === "Cervezas" || currentProductCategory === "Bebidas Alcohólicas") {
+                openGarzonAuthModal();
+            } else {
+                // De lo contrario, abre directamente el modal de personalización
+                openModal(currentProductId); 
+            }
+        }
+
+        /**
+         * Abre el modal de autorización del garzón y restablece su estado inicial.
+         */
+        function openGarzonAuthModal() {
+            if (garzonAuthModal) {
+                garzonCodeInput.value = ''; // Limpiar el input del código
+                garzonErrorMessage.classList.add('hidden'); // Ocultar mensaje de error
+                garzonAuthMessage.textContent = 'Para añadir este producto, comunícate con el Garzón más cercano.';
+                garzonAuthButton.textContent = 'Desbloquear';
+                garzonAuthButton.classList.remove('bg-green-500', 'hover:bg-green-600'); // Quita estilos de éxito
+                garzonAuthButton.classList.add('bg-secundario', 'text-grisOscuro', 'hover:bg-amber-500'); // Restaura estilos normales
+                garzonAuthModal.classList.remove('hidden'); // Muestra el modal
+            }
+        }
+
+        /**
+         * Cierra el modal de autorización del garzón.
+         */
+        function closeGarzonAuthModal() {
+            if (garzonAuthModal) garzonAuthModal.classList.add('hidden');
+        }
+
+        /**
+         * Valida el código del garzón ingresado enviándolo al backend de Django mediante una petición AJAX (fetch).
+         */
+        async function validateGarzonCode() { // Ya no es async porque no hace peticiones
+            const garzonCode = garzonCodeInput.value;
+            
+            // La validación se hace aquí, comprobando si el código está en la lista predefinida
+            const isValid = VALID_GARZON_CODES.includes(garzonCode);
+
+            if (isValid) {
+                garzonErrorMessage.classList.add('hidden'); // Oculta cualquier mensaje de error
+                
+                closeGarzonAuthModal();       // Cierra el modal de autorización del garzón
+                openModal(currentProductId);  // Abre el modal de personalización del producto (usando el ID guardado)
+                currentProductId = null;      // Limpia el ID del producto
+                currentProductCategory = null; // Limpia la categoría también
+            } else {
+                // Si el código es incorrecto
+                garzonErrorMessage.classList.remove('hidden'); // Muestra el mensaje de error
+                garzonAuthMessage.textContent = 'Código incorrecto. Intenta de nuevo.'; // Actualiza el mensaje
+                garzonAuthButton.textContent = 'Desbloquear';
+                garzonAuthButton.classList.remove('bg-green-500', 'hover:bg-green-600'); // Vuelve a estilos de error
+                garzonAuthButton.classList.add('bg-secundario', 'text-grisOscuro', 'hover:bg-amber-500'); 
+            }
+    }
     </script>
 </body>
 </html>

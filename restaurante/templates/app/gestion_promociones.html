@@ -73,9 +73,9 @@
                             {% if promocion.activa %}Activa{% else %}Inactiva{% endif %}
                         </span>
                         <a href="{% url 'editar_promocion' promocion.id %}" class="text-sm font-medium text-indigo-600 hover:text-indigo-900">Editar</a>
-                        <form action="{% url 'eliminar_promocion' promocion.id %}" method="post" class="inline" onsubmit="return confirm('¿Seguro que quieres eliminar esta promoción?');">
+                        <form action="{% url 'eliminar_promocion' promocion.id %}" method="post" class="inline eliminar-form">
                             {% csrf_token %}
-                            <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-900">Eliminar</button>
+                            <button type="button" class="text-sm font-medium text-red-600 hover:text-red-900 btn-eliminar">Eliminar</button>
                         </form>
                     </div>
                 </li>
@@ -84,6 +84,52 @@
                 {% endfor %}
             </ul>
         </div>
+        
+        <!-- Modal Confirmación de Eliminación -->
+        <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+            <div class="bg-white rounded-lg shadow-lg max-w-sm w-full p-6">
+                <h2 class="text-lg font-semibold mb-4">¿Estás seguro?</h2>
+                <p class="text-sm text-gray-600 mb-6">Esta acción no se puede deshacer. ¿Quieres eliminar esta promoción?</p>
+                <div class="flex justify-end space-x-4">
+                    <button id="cancelBtn" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancelar</button>
+                    <button id="confirmBtn" class="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700">Eliminar</button>
+                </div>
+            </div>
+        </div>
     </main>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('confirmModal');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const confirmBtn = document.getElementById('confirmBtn');
+        let formToSubmit = null;
+
+        document.querySelectorAll('.btn-eliminar').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                formToSubmit = e.target.closest('form');
+                modal.classList.remove('hidden');
+            });
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+            formToSubmit = null;
+        });
+
+        confirmBtn.addEventListener('click', () => {
+            if (formToSubmit) {
+                formToSubmit.submit();
+            }
+        });
+        
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+                formToSubmit = null;
+            }
+        });
+    });
+    </script>
 </body>
 </html>

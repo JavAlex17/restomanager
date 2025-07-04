@@ -5,6 +5,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from django.db.models import Sum, Count
 from django.db.models.functions import TruncDate
+from django.db.models import ProtectedError
 from django.utils import timezone 
 from datetime import timedelta
 from .forms import EncargadoAuthForm
@@ -266,9 +267,14 @@ def editar_categoria_view(request, categoria_id):
 def eliminar_categoria_view(request, categoria_id):
     categoria = get_object_or_404(Categoria, id=categoria_id)
     if request.method == 'POST':
-        # La lógica on_delete=SET_NULL se encargará de los productos asociados
-        categoria.delete()
-        messages.success(request, f'Categoría "{categoria.nombre}" eliminada.')
+        try:
+            # Se intenta eliminar la categoría
+            categoria.delete()
+            messages.success(request, f'Categoría "{categoria.nombre}" eliminada exitosamente.')
+        except ProtectedError:
+            # Si la categoría está en uso, se captura el error
+            messages.error(request, f'No se puede eliminar la categoría "{categoria.nombre}" porque está siendo utilizada por uno o más productos.')
+            
     return redirect('gestion_categorias')
 
 #Vista para ver promociones (CRUD)

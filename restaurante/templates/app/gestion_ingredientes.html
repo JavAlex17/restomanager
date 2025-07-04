@@ -31,81 +31,48 @@
             <div class="flex items-center ml-[-12px]">
                 <img src="{% static 'img/imagelogo.png' %}" alt="Logo" class="h-14 w-45">
             </div>
-
             <h1 class="absolute left-1/2 transform -translate-x-1/2 text-xl font-bold text-white">
                 Gestión de Ingredientes
             </h1>
-
             <div class="flex items-center space-x-4 mr-5">
                 <a href="{% url 'dashboard' %}" class="flex items-center text-white text-sm hover:text-gray-300">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M10.707 1.293a1 1 0 00-1.414 0l-8 8A1 1 0 002 10h1v7a1 1 0 001 1h4a1 1 0 001-1v-4h2v4a1 1 0 001 1h4a1 1 0 001-1v-7h1a1 1 0 00.707-1.707l-8-8z" />
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 1.293a1 1 0 00-1.414 0l-8 8A1 1 0 002 10h1v7a1 1 0 001 1h4a1 1 0 001-1v-4h2v4a1 1 0 001 1h4a1 1 0 001-1v-7h1a1 1 0 00.707-1.707l-8-8z" /></svg>
                     Volver
                 </a>
-                <button id="userMenuButton" class="flex items-center space-x-2 text-white hover:text-gray-200 focus:outline-none">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 2a4 4 0 100 8 4 4 0 000-8zM2 16a8 8 0 1116 0H2z" clip-rule="evenodd" />
-                    </svg>
-                    <span class="text-sm font-medium">{{ user.username }}</span>
-                </button>
-
-                <div id="userDropdown" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg py-2 z-50">
-                    <form action="{% url 'logout' %}" method="post">
-                        {% csrf_token %}
-                        <button type="submit" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
-                            </svg>
-                            Cerrar sesión
-                        </button>
-                    </form>
-                </div>
             </div>
         </div>
     </header>
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-
         {% if messages %}
+            <div class="mb-6">
             {% for message in messages %}
-            <div class="mb-4 p-4 text-sm rounded-lg bg-green-100 text-green-700" role="alert">{{ message }}</div>
+                <div class="p-4 rounded-md {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}" role="alert">
+                    {{ message }}
+                </div>
             {% endfor %}
+            </div>
         {% endif %}
 
-        <!-- Botón Añadir Ingrediente -->
         <div class="flex justify-end mb-6">
-            <button id="openAddIngredient" 
-                    class="inline-flex items-center px-4 py-2 bg-[#F0A202] hover:bg-[#d7990b] text-white text-sm font-medium rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F0A202]">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
+            <button id="openAddIngredient" class="inline-flex items-center px-4 py-2 bg-[#F0A202] hover:bg-[#d7990b] text-white text-sm font-medium rounded-md shadow-md">
                 Añadir Ingrediente
             </button>
         </div>
 
-        <!-- Formulario para añadir ingrediente -->
         <div id="addIngredientForm" class="{% if not form.errors %}hidden{% endif %} bg-white p-6 rounded-md shadow-lg mb-6 border border-gray-300">
             <h2 class="text-lg font-semibold mb-4 text-gray-800">Nuevo Ingrediente</h2>
             <form method="post" action="{% url 'gestion_ingredientes' %}">
                 {% csrf_token %}
-                
-                {% for error in form.non_field_errors %}
-                <p class="text-red-500 text-sm mb-2">{{ error }}</p>
-                {% endfor %}
-
+                {% for error in form.non_field_errors %}<p class="text-red-500 text-sm mb-2">{{ error }}</p>{% endfor %}
                 <div class="mb-4">
                     <label for="id_nombre" class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
                     <input type="text" name="nombre" id="id_nombre" value="{{ form.nombre.value|default:'' }}" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#F0A202]" />
-                    {% for error in form.nombre.errors %}
-                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
-                    {% endfor %}
+                    {% for error in form.nombre.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
                 </div>
                 <div class="mb-4">
                     <label for="id_precio" class="block text-sm font-medium text-gray-700 mb-1">Precio</label>
                     <input type="number" step="1" min="1" name="precio" id="id_precio" value="{{ form.precio.value|default:'1' }}" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#F0A202]" />
-                    {% for error in form.precio.errors %}
-                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
-                    {% endfor %}
+                    {% for error in form.precio.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
                 </div>
                 <div class="flex justify-end space-x-3">
                     <button type="button" id="cancelAddIngredient" class="px-4 py-2 rounded-md bg-gray-300 hover:bg-gray-400 text-gray-700">Cancelar</button>
@@ -114,7 +81,6 @@
             </form>
         </div>
 
-        <!-- Listado de ingredientes -->
         <div class="bg-white shadow overflow-hidden rounded-md">
             <ul role="list" class="divide-y divide-gray-200">
                 {% for ingrediente in ingredientes %}
@@ -124,30 +90,11 @@
                         <p class="text-sm text-gray-500">${{ ingrediente.precio|punto_mil }}</p>
                     </div>
                     <div class="space-x-4 flex items-center">
-
-                        <!-- Botón Editar con ícono y clase para abrir el modal -->
-                        <button type="button"
-                                data-id="{{ ingrediente.id }}"
-                                data-nombre="{{ ingrediente.nombre|escapejs }}"
-                                data-precio="{{ ingrediente.precio }}"
-                                class="btn-edit-ingrediente text-sm font-medium text-indigo-600 hover:text-indigo-900 inline-flex items-center space-x-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M18.5 2.5l3 3L12 15H9v-3L18.5 2.5z" />
-                            </svg>
-                            <span>Editar</span>
-                        </button>
-
-                        <!-- Formulario de eliminar -->
-                        <form action="{% url 'eliminar_ingrediente' ingrediente.id %}" method="post" class="inline" onsubmit="return confirm('¿Seguro que quieres eliminar este ingrediente?');">
+                        <button type="button" data-id="{{ ingrediente.id }}" data-nombre="{{ ingrediente.nombre|escapejs }}" data-precio="{{ ingrediente.precio }}" class="btn-edit-ingrediente text-sm font-medium text-indigo-600 hover:text-indigo-900">Editar</button>
+                        <form action="{% url 'eliminar_ingrediente' ingrediente.id %}" method="post" class="inline eliminar-form">
                             {% csrf_token %}
-                            <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-900 inline-flex items-center space-x-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0a2 2 0 00-2-2H9a2 2 0 00-2 2h10z" />
-                                </svg>
-                                <span>Eliminar</span>
-                            </button>
+                            <button type="button" class="text-sm font-medium text-red-600 hover:text-red-900 btn-eliminar">Eliminar</button>
                         </form>
-
                     </div>
                 </li>
                 {% empty %}
@@ -156,13 +103,10 @@
             </ul>
         </div>
 
-        <!-- Modal para editar ingrediente -->
         <div id="editIngredientModal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-50">
             <div class="bg-white rounded-md shadow-lg max-w-md w-full p-6 relative">
-                <button id="closeModal" class="absolute top-3 right-3 text-gray-600 hover:text-gray-900" aria-label="Cerrar">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" >
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
+                <button id="closeEditModal" class="absolute top-3 right-3 text-gray-600 hover:text-gray-900" aria-label="Cerrar">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" ><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
                 <h2 class="text-xl font-semibold mb-4 text-gray-800">Editar Ingrediente</h2>
                 <form method="post" id="formEditarIngrediente" action="{% url 'editar_ingrediente' 0 %}">
@@ -174,7 +118,7 @@
                     </div>
                     <div class="mb-4">
                         <label for="edit-precio" class="block text-sm font-medium text-gray-700 mb-1">Precio</label>
-                        <input type="number" step="0.01" min="0" name="precio" id="edit-precio" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#F0A202]" />
+                        <input type="number" step="1" min="1" name="precio" id="edit-precio" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#F0A202]" />
                     </div>
                     <div class="flex justify-end space-x-3">
                         <button type="button" id="cancelEditIngredient" class="px-4 py-2 rounded-md bg-gray-300 hover:bg-gray-400 text-gray-700">Cancelar</button>
@@ -183,70 +127,112 @@
                 </form>
             </div>
         </div>
+
+        <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+            <div class="bg-white rounded-lg shadow-lg max-w-sm w-full p-6">
+                <h2 class="text-lg font-semibold mb-4">¿Estás seguro?</h2>
+                <p class="text-sm text-gray-600 mb-6">Esta acción no se puede deshacer. ¿Quieres continuar?</p>
+                <div class="flex justify-end space-x-4">
+                    <button id="cancelBtn" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancelar</button>
+                    <button id="confirmBtn" class="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700">Eliminar</button>
+                </div>
+            </div>
+        </div>
     </main>
+    
     <script>
-        document.getElementById('userMenuButton').addEventListener('click', function () {
-            const dropdown = document.getElementById('userDropdown');
-            dropdown.classList.toggle('hidden');
-        });
-        document.addEventListener('click', function (e) {
-            const button = document.getElementById('userMenuButton');
-            const dropdown = document.getElementById('userDropdown');
-            if (!button.contains(e.target) && !dropdown.contains(e.target)) {
-                dropdown.classList.add('hidden');
+        document.addEventListener('DOMContentLoaded', () => {
+            // User menu dropdown
+            const userMenuButton = document.getElementById('userMenuButton');
+            const userDropdown = document.getElementById('userDropdown');
+            if (userMenuButton && userDropdown) {
+                userMenuButton.addEventListener('click', function () {
+                    userDropdown.classList.toggle('hidden');
+                });
+                document.addEventListener('click', function (e) {
+                    if (!userMenuButton.contains(e.target) && !userDropdown.contains(e.target)) {
+                        userDropdown.classList.add('hidden');
+                    }
+                });
             }
-        });
-    </script>
-    <script>
-        const openBtn = document.getElementById('openAddIngredient');
-        const formContainer = document.getElementById('addIngredientForm');
-        const cancelBtn = document.getElementById('cancelAddIngredient');
 
-        openBtn.addEventListener('click', () => {
-            formContainer.classList.remove('hidden');
-            openBtn.disabled = true;
-        });
+            // Toggle Add Ingredient form
+            const openBtn = document.getElementById('openAddIngredient');
+            const formContainer = document.getElementById('addIngredientForm');
+            const cancelBtnAdd = document.getElementById('cancelAddIngredient');
+            if(openBtn && formContainer && cancelBtnAdd) {
+                openBtn.addEventListener('click', () => {
+                    formContainer.classList.remove('hidden');
+                });
+                cancelBtnAdd.addEventListener('click', () => {
+                    formContainer.classList.add('hidden');
+                });
+            }
 
-        cancelBtn.addEventListener('click', () => {
-            formContainer.classList.add('hidden');
-            openBtn.disabled = false;
-        });
-    </script>
-    <script>
-        const modal = document.getElementById('editIngredientModal');
-        const closeModalBtn = document.getElementById('closeModal');
-        const cancelEditBtn = document.getElementById('cancelEditIngredient');
-        const formEditar = document.getElementById('formEditarIngrediente');
+            // Edit Ingredient Modal
+            const editModal = document.getElementById('editIngredientModal');
+            if(editModal) {
+                const closeEditModalBtn = document.getElementById('closeEditModal');
+                const cancelEditBtn = document.getElementById('cancelEditIngredient');
+                const formEditar = document.getElementById('formEditarIngrediente');
+                
+                document.querySelectorAll('.btn-edit-ingrediente').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const id = button.dataset.id;
+                        const nombre = button.dataset.nombre;
+                        const precio = button.dataset.precio;
+                        document.getElementById('edit-id').value = id;
+                        document.getElementById('edit-nombre').value = nombre;
+                        document.getElementById('edit-precio').value = precio;
+                        formEditar.action = `/dashboard/ingredientes/editar/${id}/`;
+                        editModal.classList.remove('hidden');
+                        editModal.classList.add('flex');
+                    });
+                });
 
-        document.querySelectorAll('.btn-edit-ingrediente').forEach(button => {
-            button.addEventListener('click', () => {
-                const id = button.dataset.id;
-                const nombre = button.dataset.nombre;
-                const precio = button.dataset.precio;
+                function closeEditModal() {
+                    editModal.classList.add('hidden');
+                    editModal.classList.remove('flex');
+                }
+                closeEditModalBtn.addEventListener('click', closeEditModal);
+                cancelEditBtn.addEventListener('click', closeEditModal);
+                editModal.addEventListener('click', (e) => {
+                    if(e.target === editModal) closeEditModal();
+                });
+            }
+            
+            // Delete Confirmation Modal
+            const deleteModal = document.getElementById('confirmModal');
+            if(deleteModal) {
+                const cancelDeleteBtn = document.getElementById('cancelBtn');
+                const confirmDeleteBtn = document.getElementById('confirmBtn');
+                let formToSubmit = null;
 
-                document.getElementById('edit-id').value = id;
-                document.getElementById('edit-nombre').value = nombre;
-                document.getElementById('edit-precio').value = precio;
+                document.querySelectorAll('.btn-eliminar').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        formToSubmit = e.target.closest('form');
+                        deleteModal.classList.remove('hidden');
+                    });
+                });
 
-                //Cambia la URL de acción del formulario para incluir el ID correcto
-                formEditar.action = formEditar.action.replace(/\/\d+\/?$/, `/${id}/`);
+                cancelDeleteBtn.addEventListener('click', () => {
+                    deleteModal.classList.add('hidden');
+                    formToSubmit = null;
+                });
 
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-            });
-        });
-
-        function closeModal() {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }
-
-        closeModalBtn.addEventListener('click', closeModal);
-        cancelEditBtn.addEventListener('click', closeModal);
-
-        //Cierra el modal si se hace click fuera del contenido
-        modal.addEventListener('click', (e) => {
-            if(e.target === modal) closeModal();
+                confirmDeleteBtn.addEventListener('click', () => {
+                    if (formToSubmit) {
+                        formToSubmit.submit();
+                    }
+                });
+                
+                deleteModal.addEventListener('click', (e) => {
+                    if (e.target === deleteModal) {
+                        deleteModal.classList.add('hidden');
+                        formToSubmit = null;
+                    }
+                });
+            }
         });
     </script>
 </body>

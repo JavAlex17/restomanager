@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Productos</title>
+    <title>Gestión de Turnos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -36,46 +36,16 @@
             <div class="flex items-center ml-[-12px]">
                 <img src="{% static 'img/imagelogo.png' %}" alt="Logo" class="h-14 w-45">
             </div>
-
             <h1 class="absolute left-1/2 transform -translate-x-1/2 text-xl font-bold text-white">
                 Gestión de Turnos
             </h1>
-
             <div class="flex items-center space-x-4 mr-5">
                 <a href="{% url 'dashboard' %}" class="flex items-center text-white text-sm hover:text-gray-300">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="currentColor"
-                        viewBox="0 0 20 20">
-                        <path
-                            d="M10.707 1.293a1 1 0 00-1.414 0l-8 8A1 1 0 002 10h1v7a1 1 0 001 1h4a1 1 0 001-1v-4h2v4a1 1 0 001 1h4a1 1 0 001-1v-7h1a1 1 0 00.707-1.707l-8-8z" />
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.707 1.293a1 1 0 00-1.414 0l-8 8A1 1 0 002 10h1v7a1 1 0 001 1h4a1 1 0 001-1v-4h2v4a1 1 0 001 1h4a1 1 0 001-1v-7h1a1 1 0 00.707-1.707l-8-8z" />
                     </svg>
                     Volver
                 </a>
-
-                <button id="userMenuButton"
-                    class="flex items-center space-x-2 text-white hover:text-gray-200 focus:outline-none">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="currentColor"
-                        viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 2a4 4 0 100 8 4 4 0 000-8zM2 16a8 8 0 1116 0H2z"
-                            clip-rule="evenodd" />
-                    </svg>
-                    <span class="text-sm font-medium">{{ user.username }}</span>
-                </button>
-
-                <div id="userDropdown"
-                    class="hidden absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg py-2 z-50">
-                    <form action="{% url 'logout' %}" method="post">
-                        {% csrf_token %}
-                        <button type="submit"
-                            class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
-                            </svg>
-                            Cerrar sesión
-                        </button>
-                    </form>
-                </div>
             </div>
         </div>
     </header>
@@ -92,32 +62,19 @@
                     <h2 class="text-lg font-semibold mb-4 text-gray-800">Añadir Nuevo Turno</h2>
                     <form method="post">
                         {% csrf_token %}
-
-                        <!-- BLOQUE DE ERRORES UNIFICADO -->
                         {% if form.errors %}
                         <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
-                            {% for field, errors in form.errors.items %}
-                            {% for error in errors %}
-                            {{ error }}
-                            {% endfor %}
-                            {% endfor %}
+                            {% for field, errors in form.errors.items %}{% for error in errors %}{{ error }}{% endfor %}{% endfor %}
                         </div>
                         {% endif %}
-
-                        <!-- CAMPOS DEL FORMULARIO SIN ERRORES INDIVIDUALES -->
                         {% for field in form %}
                         <div class="form-field-wrapper mb-4">
                             {{ field.label_tag }}
-                            <div class="mt-1">
-                                {{ field }}
-                            </div>
+                            <div class="mt-1">{{ field }}</div>
                         </div>
                         {% endfor %}
-
                         <div class="flex justify-end mt-4">
-                            <button type="submit"
-                                class="px-4 py-2 rounded-md bg-secundario text-grisOscuro font-medium">Guardar
-                                Turno</button>
+                            <button type="submit" class="px-4 py-2 rounded-md bg-secundario text-grisOscuro font-medium">Guardar Turno</button>
                         </div>
                     </form>
                 </div>
@@ -132,12 +89,10 @@
                                 <p class="text-sm text-gray-600">{{ turno.fecha_inicio|date:"d/m/Y, H:i" }} - {{ turno.fecha_fin|date:"H:i" }}</p>
                             </div>
                             <div class="space-x-4">
-                                <a href="{% url 'editar_turno' turno.id %}"
-                                    class="text-sm font-medium text-indigo-600">Editar</a>
-                                <form action="{% url 'eliminar_turno' turno.id %}" method="post" class="inline"
-                                    onsubmit="return confirm('¿Eliminar este turno?');">
+                                <a href="{% url 'editar_turno' turno.id %}" class="text-sm font-medium text-indigo-600">Editar</a>
+                                <form action="{% url 'eliminar_turno' turno.id %}" method="post" class="inline eliminar-form">
                                     {% csrf_token %}
-                                    <button type="submit" class="text-sm font-medium text-red-600">Eliminar</button>
+                                    <button type="button" class="text-sm font-medium text-red-600 btn-eliminar">Eliminar</button>
                                 </form>
                             </div>
                         </li>
@@ -148,18 +103,52 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal Confirmación de Eliminación -->
+        <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+            <div class="bg-white rounded-lg shadow-lg max-w-sm w-full p-6">
+                <h2 class="text-lg font-semibold mb-4">¿Estás seguro?</h2>
+                <p class="text-sm text-gray-600 mb-6">Esta acción no se puede deshacer. ¿Quieres eliminar este turno?</p>
+                <div class="flex justify-end space-x-4">
+                    <button id="cancelBtn" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancelar</button>
+                    <button id="confirmBtn" class="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700">Eliminar</button>
+                </div>
+            </div>
+        </div>
     </main>
 
     <script>
-        const userMenuButton = document.getElementById('userMenuButton');
-        const userDropdown = document.getElementById('userDropdown');
-        userMenuButton.addEventListener('click', () => userDropdown.classList.toggle('hidden'));
-        document.addEventListener('click', (e) => {
-            if (!userMenuButton.contains(e.target) && !userDropdown.contains(e.target)) {
-                userDropdown.classList.add('hidden');
+    document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('confirmModal');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const confirmBtn = document.getElementById('confirmBtn');
+        let formToSubmit = null;
+
+        document.querySelectorAll('.btn-eliminar').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                formToSubmit = e.target.closest('form');
+                modal.classList.remove('hidden');
+            });
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+            formToSubmit = null;
+        });
+
+        confirmBtn.addEventListener('click', () => {
+            if (formToSubmit) {
+                formToSubmit.submit();
             }
         });
+        
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+                formToSubmit = null;
+            }
+        });
+    });
     </script>
 </body>
-
 </html>

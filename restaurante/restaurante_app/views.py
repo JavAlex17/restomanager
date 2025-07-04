@@ -8,13 +8,10 @@ from django.db.models.functions import TruncDate
 from django.utils import timezone 
 from datetime import timedelta
 from .forms import EncargadoAuthForm
-# --- ¡NECESITAS ESTA IMPORTACIÓN! ---
 from django.http import JsonResponse 
-# ------------------------------------
 
-#Se importan los modelos y formularios
-from .models import Producto, Pedido, Usuario, Ingrediente, Categoria, PedidoDetalle, Turno
-from .forms import UsuarioCreationForm, ProductoForm, IngredienteForm, CategoriaForm, TurnoForm
+from .models import Producto, Pedido, Usuario, Ingrediente, Categoria, PedidoDetalle, Turno, Promocion
+from .forms import UsuarioCreationForm, ProductoForm, IngredienteForm, CategoriaForm, TurnoForm, PromocionForm
 import uuid
 import json
 
@@ -69,13 +66,22 @@ def login_view(request):
 #Vista del menú
 @login_required
 def menu_view(request):
-    if request.user.rol != 'MESA': return redirect('index')
+    # Esta línea es la que realmente da acceso solo a las mesas
+    if request.user.rol != 'MESA': 
+        messages.error(request, 'No tienes permiso para acceder a esta página.')
+        return redirect('index')
     
-    productos = Producto.objects.filter(disponible=True).order_by('categoria__orden', 'nombre')
+    productos_list = Producto.objects.filter(disponible=True).order_by('categoria__orden', 'nombre')
     all_ingredients = Ingrediente.objects.all()
-    
+
+    # Añadimos la lógica de promoción a cada producto
+    for producto in productos_list:
+        precio_final = producto.get_precio_final()
+        producto.precio_final = precio_final
+        producto.tiene_promocion = precio_final < producto.precio
+
     context = {
-        'productos': productos,
+        'productos': productos_list,
         'mesa_nombre': request.user.username,
         'all_ingredients': all_ingredients,
     }
@@ -265,7 +271,47 @@ def eliminar_categoria_view(request, categoria_id):
         messages.success(request, f'Categoría "{categoria.nombre}" eliminada.')
     return redirect('gestion_categorias')
 
+#Vista para ver promociones (CRUD)
+@staff_required
+def gestion_promociones_view(request):
+    promociones = Promocion.objects.all().order_by('-activa', '-fecha_fin')
+    return render(request, 'app/gestion_promociones.html', {'promociones': promociones})
 
+#Vista para crear una nueva promoción (Create)
+@staff_required
+def crear_promocion_view(request):
+    if request.method == 'POST':
+        form = PromocionForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Promoción creada exitosamente.')
+            return redirect('gestion_promociones')
+    else:
+        form = PromocionForm()
+    return render(request, 'app/crear_editar_promocion.html', {'form': form})
+
+#Vista para editar una promoción existente (Update)
+@staff_required
+def editar_promocion_view(request, promocion_id):
+    promocion = get_object_or_404(Promocion, id=promocion_id)
+    if request.method == 'POST':
+        form = PromocionForm(request.POST, instance=promocion)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Promoción actualizada exitosamente.')
+            return redirect('gestion_promociones')
+    else:
+        form = PromocionForm(instance=promocion)
+    return render(request, 'app/crear_editar_promocion.html', {'form': form})
+
+#Acción para eliminar una promoción (Delete)
+@staff_required
+def eliminar_promocion_view(request, promocion_id):
+    promocion = get_object_or_404(Promocion, id=promocion_id)
+    if request.method == 'POST':
+        promocion.delete()
+        messages.success(request, f'Promoción "{promocion.nombre}" eliminada.')
+    return redirect('gestion_promociones')
 
 #Vista para ver el pedido actual
 @login_required
@@ -274,30 +320,33 @@ def ver_pedido(request):
     
     pedido_session = request.session.get('pedido', {})
     pedido_enriquecido = {}
-    total_general = 0
+    subtotal_pedido = 0
+    total_final = 0
     all_ingredients = Ingrediente.objects.all()
 
     for item_id, item_details in pedido_session.items():
         producto = get_object_or_404(Producto, id=item_details['producto_id'])
         cantidad = item_details.get('cantidad', 1)
-        precio_unitario = item_details.get('precio_unitario', 0)
-        subtotal = precio_unitario * cantidad
-        total_general += subtotal
         
-        #Se obtienen los nombres de los ingredientes seleccionados
-        ingredientes_ids = item_details.get('ingredientes_ids', [])
-        nombres_ingredientes = list(Ingrediente.objects.filter(id__in=ingredientes_ids).values_list('nombre', flat=True))
-        
-        #Se crea una copia
+        # Enriquecemos el item para la plantilla
         item_enriquecido = item_details.copy()
         item_enriquecido['producto'] = producto
-        item_enriquecido['subtotal'] = subtotal
-        item_enriquecido['nombres_ingredientes'] = nombres_ingredientes
+        item_enriquecido['subtotal'] = item_details['precio_unitario'] * cantidad
+        item_enriquecido['precio_total_original'] = item_details['precio_original_unitario'] * cantidad
+        item_enriquecido['nombres_ingredientes'] = list(Ingrediente.objects.filter(id__in=item_details.get('ingredientes_ids', [])).values_list('nombre', flat=True))
+        
         pedido_enriquecido[item_id] = item_enriquecido
+        
+        subtotal_pedido += item_enriquecido['precio_total_original']
+        total_final += item_enriquecido['subtotal']
+
+    total_descuento = subtotal_pedido - total_final
 
     return render(request, 'app/ver_pedido.html', {
-        'pedido': pedido_enriquecido, 
-        'total': total_general,
+        'pedido': pedido_enriquecido,
+        'subtotal_pedido': subtotal_pedido,
+        'total_descuento': total_descuento,
+        'total_final': total_final,
         'all_ingredients': all_ingredients,
     })
 
@@ -310,38 +359,33 @@ def anadir_al_pedido(request, producto_id):
     if 'pedido' not in request.session:
         request.session['pedido'] = {}
 
-    try:
-        cantidad = int(request.POST.get('cantidad', 1))
-        if cantidad < 1: cantidad = 1
-    except (ValueError, TypeError):
-        cantidad = 1
+    cantidad = int(request.POST.get('cantidad', 1))
+    if cantidad < 1: cantidad = 1
         
-    ingredientes_seleccionados_ids_str = request.POST.getlist('ingredientes')
-    ingredientes_seleccionados_ids = {int(i) for i in ingredientes_seleccionados_ids_str}
+    ingredientes_ids = {int(i) for i in request.POST.getlist('ingredientes')}
     observacion = request.POST.get('observacion', '')
 
-    #Costo de los ingredientes extra
+    # Calcular costo de ingredientes extra
     extra_cost = 0
     base_ingredientes_ids = set(producto.ingredientes.values_list('id', flat=True))
-    
-    for ing_id in ingredientes_seleccionados_ids:
+    for ing_id in ingredientes_ids:
         if ing_id not in base_ingredientes_ids:
-            try:
-                ingrediente_extra = Ingrediente.objects.get(id=ing_id)
-                extra_cost += ingrediente_extra.precio
-            except Ingrediente.DoesNotExist:
-                continue
+            extra_cost += Ingrediente.objects.get(id=ing_id).precio
 
-    #Precio final del item base + los extras
-    item_price = producto.precio + extra_cost
+    # Aplicar promoción al precio base del producto
+    precio_con_descuento = producto.get_precio_final()
+    
+    # Precio final del item = (precio base con descuento) + extras
+    item_price = precio_con_descuento + extra_cost
 
     item_id = str(uuid.uuid4())
     request.session['pedido'][item_id] = {
         'producto_id': producto.id,
         'nombre': producto.nombre,
         'precio_unitario': item_price,
+        'precio_original_unitario': producto.precio + extra_cost, # Guardamos el precio sin descuento
         'cantidad': cantidad,
-        'ingredientes_ids': list(ingredientes_seleccionados_ids),
+        'ingredientes_ids': list(ingredientes_ids),
         'observacion': observacion,
     }
 
@@ -393,7 +437,8 @@ def confirmar_pedido(request):
             pedido=nuevo_pedido,
             producto=producto,
             cantidad=item_details.get('cantidad', 1),
-            observacion=personalizacion_str.strip()
+            precio_unitario=item_details.get('precio_unitario'), # Se guarda el precio con descuento
+            observacion=item_details.get('observacion', '')
         )
     
     del request.session['pedido']
@@ -404,47 +449,35 @@ def confirmar_pedido(request):
 @login_required
 def actualizar_item_pedido(request, item_id):
     if request.user.rol != 'MESA': return redirect('index')
-
     if 'pedido' not in request.session or item_id not in request.session['pedido']:
         return redirect('ver_pedido')
         
     if request.method == 'POST':
+        # Re-calculamos el precio por si cambian los ingredientes
         item_actual = request.session['pedido'][item_id]
         producto = get_object_or_404(Producto, id=item_actual['producto_id'])
-
-        try:
-            cantidad = int(request.POST.get('cantidad', 1))
-            if cantidad < 1: cantidad = 1
-        except (ValueError, TypeError):
-            cantidad = 1
-
-        ingredientes_seleccionados_ids_str = request.POST.getlist('ingredientes')
-        ingredientes_seleccionados_ids = {int(i) for i in ingredientes_seleccionados_ids_str}
+        cantidad = int(request.POST.get('cantidad', 1))
+        ingredientes_ids = {int(i) for i in request.POST.getlist('ingredientes')}
         observacion = request.POST.get('observacion', '')
 
         extra_cost = 0
         base_ingredientes_ids = set(producto.ingredientes.values_list('id', flat=True))
-        
-        for ing_id in ingredientes_seleccionados_ids:
+        for ing_id in ingredientes_ids:
             if ing_id not in base_ingredientes_ids:
-                try:
-                    ingrediente_extra = Ingrediente.objects.get(id=ing_id)
-                    extra_cost += ingrediente_extra.precio
-                except Ingrediente.DoesNotExist:
-                    continue
-
-        item_price = producto.precio + extra_cost
+                extra_cost += Ingrediente.objects.get(id=ing_id).precio
         
-        request.session['pedido'][item_id] = {
-            'producto_id': producto.id,
-            'nombre': producto.nombre,
+        precio_con_descuento = producto.get_precio_final()
+        item_price = precio_con_descuento + extra_cost
+        
+        request.session['pedido'][item_id].update({
             'precio_unitario': item_price,
+            'precio_original_unitario': producto.precio + extra_cost,
             'cantidad': cantidad,
-            'ingredientes_ids': list(ingredientes_seleccionados_ids),
+            'ingredientes_ids': list(ingredientes_ids),
             'observacion': observacion,
-        }
+        })
         request.session.modified = True
-        messages.success(request, f'Se ha actualizado tu pedido.')
+        messages.success(request, 'Producto actualizado en tu pedido.')
     
     return redirect('ver_pedido')
 

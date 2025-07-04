@@ -139,8 +139,7 @@
                         </div>
                         <p class="text-xs text-gray-400 mb-3">Esperando el pago del cliente.</p>
 
-                        <!-- BOTÓN VISIBLE SOLO PARA EL ENCARGADO -->
-                        {% if user.rol == 'ENCARGADO' %}
+                        <!-- Botón pagado -->
                         <div class="mt-2 flex justify-between items-center">
                             <p class="text-sm text-gray-500">Total: <span class="font-semibold text-grisOscuro">${{ pedido.monto_total|punto_mil }}</span></p>
                             <form action="{% url 'actualizar_estado_pedido' pedido.id %}" method="post">
@@ -150,7 +149,6 @@
                                     class="px-3 py-1 bg-blue-500 text-white text-sm font-semibold rounded-md hover:bg-blue-600">Marcar como Pagado</button>
                             </form>
                         </div>
-                        {% endif %}
                     </div>
                     {% endif %}
                     {% endfor %}
@@ -164,8 +162,7 @@
                     {% for pedido in pedidos_a_gestionar %}{% if pedido.estado == 'CANCELADO' %}
                     <div class="border border-red-200 rounded-lg p-4 shadow-sm bg-gray-50">
                         <div class="flex justify-between items-center mb-2">
-                            <h3 class="font-bold text-gray-500 line-through">Pedido #{{ pedido.id }} - Mesa {{
-                                pedido.usuario.username }}</h3>
+                            <h3 class="font-bold text-gray-500 line-through">Pedido #{{ pedido.id }} - Mesa {{ pedido.usuario.username }}</h3>
                             <span class="text-red-500 font-semibold">X Cancelado</span>
                         </div>
                         <div class="mt-4 flex justify-end">

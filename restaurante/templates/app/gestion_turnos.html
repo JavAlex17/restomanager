@@ -129,8 +129,7 @@
                         <li class="px-6 py-4 flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium text-secundario">{{ turno.camarero.username }}</p>
-                                <p class="text-sm text-gray-600">{{ turno.fecha_inicio|date:"d/m/Y, H:i" }} - {{
-                                    turno.fecha_fin|date:"H:i" }}</p>
+                                <p class="text-sm text-gray-600">{{ turno.fecha_inicio|date:"d/m/Y, H:i" }} - {{ turno.fecha_fin|date:"H:i" }}</p>
                             </div>
                             <div class="space-x-4">
                                 <a href="{% url 'editar_turno' turno.id %}"

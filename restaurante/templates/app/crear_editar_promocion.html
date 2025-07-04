@@ -1,0 +1,162 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if form.instance.pk %}Editar{% else %}Crear{% endif %} Promoción</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #F9FAFB; }
+        
+        /* Clases de estilo extraídas de producto_form.html para consistencia */
+        .form-field-wrapper { margin-bottom: 1.5rem; }
+        .form-field-wrapper label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151; font-size: 0.875rem; }
+        .form-field-wrapper input[type="text"],
+        .form-field-wrapper input[type="number"],
+        .form-field-wrapper input[type="date"],
+        .form-field-wrapper select,
+        .form-field-wrapper textarea {
+            width: 100%;
+            border: 1px solid #D1D5DB;
+            border-radius: 0.375rem;
+            padding: 0.5rem 0.75rem; /* Ajuste de padding para mejor apariencia */
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            transition: ring 0.2s, border-color 0.2s;
+        }
+        .form-field-wrapper input:focus,
+        .form-field-wrapper select:focus,
+        .form-field-wrapper textarea:focus {
+            outline: none;
+            border-color: #F0A202;
+            box-shadow: 0 0 0 2px rgba(240, 162, 2, 0.5);
+        }
+        .form-field-wrapper select[multiple] {
+            padding: 0.5rem;
+        }
+        .form-field-wrapper .help-text { font-size: 0.75rem; color: #6B7280; margin-top: 0.25rem; }
+        .form-field-wrapper .error-text { font-size: 0.75rem; color: #EF4444; margin-top: 0.25rem; }
+
+        /* Estilo para el checkbox de "Activa" */
+        .checkbox-wrapper { display: flex; align-items: flex-start; }
+        .checkbox-wrapper input[type="checkbox"] {
+            height: 1rem;
+            width: 1rem;
+            margin-top: 0.125rem;
+            border-radius: 0.25rem;
+            border-color: #D1D5DB;
+            color: #F0A202;
+        }
+        .checkbox-wrapper .label-group { margin-left: 0.75rem; }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <header class="bg-[#353535] shadow-sm relative"> 
+        <div class="w-full mx-auto py-2 px-0 flex items-center justify-between relative">
+            <div class="flex items-center ml-[-12px]">
+                <img src="{% static 'img/imagelogo.png' %}" alt="Logo" class="h-14 w-45">
+            </div>
+            <h1 class="absolute left-1/2 transform -translate-x-1/2 text-xl font-bold text-white">
+                {% if form.instance.pk %}Editar Promoción{% else %}Crear Promoción{% endif %}
+            </h1>
+            <div class="flex items-center space-x-4 mr-5">
+                <a href="{% url 'gestion_promociones' %}" class="flex items-center text-white text-sm hover:text-gray-300">
+                    Volver
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto py-10 sm:px-6 lg:px-8">
+        <div class="bg-white shadow-lg rounded-lg p-8">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- Alertas de Errores Generales del Formulario -->
+                {% if form.non_field_errors %}
+                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+                        <p class="font-bold">Error de validación</p>
+                        {% for error in form.non_field_errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <!-- Renderizado dinámico de campos -->
+                {% for field in form %}
+                    <div class="form-field-wrapper">
+                        
+                        {% if field.name == 'activa' %}
+                            <!-- Manejo especial para el checkbox -->
+                            <div class="checkbox-wrapper">
+                                {{ field }}
+                                <div class="label-group">
+                                    {{ field.label_tag }}
+                                    {% if field.help_text %}<p class="help-text">{{ field.help_text }}</p>{% endif %}
+                                </div>
+                            </div>
+                        {% elif field.name == 'fecha_inicio' or field.name == 'fecha_fin' %}
+                            <!-- Manejo especial para campos de fecha para asegurar el formato del valor -->
+                            {{ field.label_tag }}
+                            <input type="date" 
+                                   name="{{ field.name }}" 
+                                   {% if field.value %}value="{{ field.value|date:'Y-m-d' }}"{% endif %}
+                                   id="{{ field.id_for_label }}">
+                            {% if field.help_text %}<p class="help-text">{{ field.help_text }}</p>{% endif %}
+                        {% else %}
+                            <!-- Renderizado estándar para otros campos -->
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {% if field.help_text %}<p class="help-text">{{ field.help_text }}</p>{% endif %}
+                        {% endif %}
+
+                        <!-- Alertas de errores por campo -->
+                        {% for error in field.errors %}
+                            <p class="error-text">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                <!-- Botones de Acción -->
+                <div class="mt-8 pt-6 border-t border-gray-200 flex justify-end space-x-3">
+                    <a href="{% url 'gestion_promociones' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-md shadow-sm">Cancelar</a>
+                    <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#F0A202] hover:bg-amber-500">
+                        Guardar Promoción
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- Script para validación de fechas en el cliente -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Se obtiene la fecha de hoy en formato YYYY-MM-DD
+            const today = new Date().toISOString().split('T')[0];
+            
+            const fechaInicioInput = document.querySelector('input[name="fecha_inicio"]');
+            const fechaFinInput = document.querySelector('input[name="fecha_fin"]');
+
+            // Se establece la fecha mínima para ambos campos para no permitir fechas pasadas
+            // Esto solo se aplica si el campo no tiene ya un valor (para no bloquear la edición de promociones pasadas)
+            if (fechaInicioInput && !fechaInicioInput.value) {
+                fechaInicioInput.setAttribute('min', today);
+            }
+            if (fechaFinInput && !fechaFinInput.value) {
+                fechaFinInput.setAttribute('min', today);
+            }
+
+            // Se añade un listener para que la fecha de fin no pueda ser anterior a la de inicio
+            if(fechaInicioInput && fechaFinInput) {
+                fechaInicioInput.addEventListener('change', function() {
+                    if (fechaInicioInput.value) {
+                        fechaFinInput.setAttribute('min', fechaInicioInput.value);
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

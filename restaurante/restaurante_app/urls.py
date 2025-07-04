@@ -32,6 +32,11 @@ urlpatterns = [
     path('pedido/confirmar/', views.confirmar_pedido, name='confirmar_pedido'),
     path('pedido/actualizar/<str:item_id>/', views.actualizar_item_pedido, name='actualizar_item_pedido'),
 
+    path('dashboard/promociones/', views.gestion_promociones_view, name='gestion_promociones'),
+    path('dashboard/promociones/nueva/', views.crear_promocion_view, name='crear_promocion'),
+    path('dashboard/promociones/editar/<int:promocion_id>/', views.editar_promocion_view, name='editar_promocion'),
+    path('dashboard/promociones/eliminar/<int:promocion_id>/', views.eliminar_promocion_view, name='eliminar_promocion'),
+
     path('logout/mesa/', views.logout_mesa_view, name='logout_mesa'),
 
     path('pedidos/', views.pedidos_camarero_view, name='pedidos_camarero'),

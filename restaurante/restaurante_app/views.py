@@ -514,10 +514,8 @@ def actualizar_estado_pedido_view(request, pedido_id):
         else:
             messages.error(request, 'El estado seleccionado no es válido.')
 
-    if request.user.rol == 'CAMARERO':
         return redirect('pedidos_camarero')
-    else:
-        return redirect('dashboard')
+
 
 
 #Vista para gestionar turnos

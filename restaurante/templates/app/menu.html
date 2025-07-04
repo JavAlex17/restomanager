@@ -1,4 +1,5 @@
 {% load static %}
+{% load custom_filters %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -72,7 +73,7 @@
                             <div class="p-6 flex flex-col flex-grow">
                                 <div class="flex justify-between items-start mb-2">
                                     <h3 class="text-xl font-semibold text-grisOscuro">{{ producto.nombre }}</h3>
-                                    <p class="text-xl font-bold text-secundario">${{ producto.precio }}</p>
+                                    <p class="text-xl font-bold text-secundario">${{ producto.precio|punto_mil }}</p>
                                 </div>
                                 <p class="text-grisMedio text-sm mb-4 flex-grow">{{ producto.descripcion }}</p>
                                 <button data-product-id="{{ producto.id }}" data-category-name="{{ producto.categoria.nombre }}" onclick="handleProductClick(this)" class="mt-auto w-full bg-grisOscuro text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors">Añadir al Pedido</button>
@@ -102,7 +103,7 @@
                                                 {% for ingrediente in all_ingredients %}
                                                 <label class="flex items-center">
                                                     <input type="checkbox" name="ingredientes" value="{{ ingrediente.id }}" {% if ingrediente in producto.ingredientes.all %}checked{% endif %} class="h-4 w-4 rounded border-gray-300 text-secundario focus:ring-secundario" data-price="{{ ingrediente.precio }}" data-base="{% if ingrediente in producto.ingredientes.all %}true{% else %}false{% endif %}" onchange="updateModalPrice(this)">
-                                                    <span class="ml-3 text-sm text-gray-700">{{ ingrediente.nombre }}{% if ingrediente not in producto.ingredientes.all %} (+${{ ingrediente.precio }}){% endif %}</span>
+                                                    <span class="ml-3 text-sm text-gray-700">{{ ingrediente.nombre }}{% if ingrediente not in producto.ingredientes.all %} (+${{ ingrediente.precio|punto_mil }}){% endif %}</span>
                                                 </label>
                                                 {% endfor %}
                                             </div>
@@ -111,7 +112,7 @@
                                         {% endif %}
                                     </div>
                                     <div class="bg-gray-50 px-6 py-4 flex justify-end items-center">
-                                        <span id="price-display-{{ producto.id }}" class="text-2xl font-bold text-grisOscuro mr-auto">${{ producto.precio }}</span>
+                                        <span id="price-display-{{ producto.id }}" class="text-2xl font-bold text-grisOscuro mr-auto">${{ producto.precio|punto_mil }}</span>
                                         <button type="button" onclick="closeModalByButton(this)" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-400 mr-3">Cancelar</button>
                                         <button type="submit" class="bg-secundario text-grisOscuro font-bold py-2 px-6 rounded-lg hover:bg-amber-500">Añadir</button>
                                     </div>
@@ -275,7 +276,7 @@
             const finalPricePerUnit = basePrice + extraCost;
             const totalPrice = finalPricePerUnit * quantity;
 
-            priceDisplay.textContent = `$${totalPrice.toFixed(0)}`; // Muestra el precio formateado sin decimales
+            priceDisplay.textContent = `$${totalPrice.toLocaleString('es-CL')}`;
         }
 
         // --- Funciones para el modal de Cierre de Sesión ---

@@ -130,18 +130,52 @@
                             <h3 class="font-bold text-gray-800">Pedido #{{ pedido.id }} - Mesa {{ pedido.usuario.username }}</h3>
                             <span class="text-green-600 font-semibold">✓ Entregado</span>
                         </div>
-                        <p class="text-xs text-gray-400 mb-3">Esperando el pago del cliente.</p>
-
-                        <!-- Botón pagado -->
-                        <div class="mt-2 flex justify-between items-center">
-                            <p class="text-sm text-gray-500">Total: <span class="font-semibold text-grisOscuro">${{ pedido.monto_total|punto_mil }}</span></p>
-                            <form action="{% url 'actualizar_estado_pedido' pedido.id %}" method="post">
-                                {% csrf_token %}
-                                <input type="hidden" name="nuevo_estado" value="PAGADO">
-                                <button type="submit"
-                                    class="px-3 py-1 bg-blue-500 text-white text-sm font-semibold rounded-md hover:bg-blue-600">Marcar como Pagado</button>
-                            </form>
+                        
+                        <!-- Desglose de Pago -->
+                        <div class="mt-4 text-sm space-y-1 border-t pt-3">
+                            <div class="flex justify-between">
+                                <span>Subtotal:</span>
+                                <span class="font-semibold">${{ pedido.monto_total|punto_mil }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Propina:</span>
+                                <span class="font-semibold text-blue-600" id="tip-amount-{{ pedido.id }}">$0</span>
+                            </div>
+                            <div class="flex justify-between border-t pt-2 mt-2">
+                                <span class="font-bold text-lg">Total Final:</span>
+                                <span class="font-bold text-lg text-primario" id="final-total-{{ pedido.id }}">${{ pedido.monto_total|punto_mil }}</span>
+                            </div>
                         </div>
+
+                        <!-- Botones de Propina -->
+                        <div class="mt-3 flex justify-center space-x-2">
+                            <button type="button" 
+                                    data-order-id="{{ pedido.id }}" 
+                                    data-base-total="{{ pedido.monto_total }}" 
+                                    data-percentage="0.10" 
+                                    onclick="addTip(this)" 
+                                    class="px-3 py-1 text-xs bg-gray-200 rounded-md hover:bg-gray-300">10% Propina</button>
+                            <button type="button" 
+                                    data-order-id="{{ pedido.id }}" 
+                                    data-base-total="{{ pedido.monto_total }}" 
+                                    data-percentage="0.15" 
+                                    onclick="addTip(this)" 
+                                    class="px-3 py-1 text-xs bg-gray-200 rounded-md hover:bg-gray-300">15% Propina</button>
+                            <button type="button" 
+                                    data-order-id="{{ pedido.id }}" 
+                                    data-base-total="{{ pedido.monto_total }}" 
+                                    data-percentage="0" 
+                                    onclick="addTip(this)" 
+                                    class="px-3 py-1 text-xs bg-red-200 rounded-md hover:bg-red-300">Sin Propina</button>
+                        </div>
+
+                        <!-- Formulario para Marcar como Pagado -->
+                        <form action="{% url 'actualizar_estado_pedido' pedido.id %}" method="post" class="mt-3">
+                            {% csrf_token %}
+                            <input type="hidden" name="nuevo_estado" value="PAGADO">
+                            <input type="hidden" name="propina" id="propina-input-{{ pedido.id }}" value="0">
+                            <button type="submit" class="w-full px-3 py-2 bg-blue-500 text-white text-sm font-semibold rounded-md hover:bg-blue-600">Marcar como Pagado</button>
+                        </form>
                     </div>
                     {% endif %}
                     {% endfor %}
@@ -182,6 +216,22 @@
                 userDropdown.classList.add('hidden');
             }
         });
+        function addTip(button) {
+            // Extrae los datos desde los atributos data-* del botón
+            const orderId = button.dataset.orderId;
+            const baseTotal = parseFloat(button.dataset.baseTotal);
+            const percentage = parseFloat(button.dataset.percentage);
+
+            // El resto de la lógica es la misma
+            const tipAmount = Math.round(baseTotal * percentage);
+            const finalTotal = baseTotal + tipAmount;
+
+            const formatAsCurrency = (value) => `$${value.toLocaleString('es-CL')}`;
+
+            document.getElementById(`tip-amount-${orderId}`).textContent = formatAsCurrency(tipAmount);
+            document.getElementById(`final-total-${orderId}`).textContent = formatAsCurrency(finalTotal);
+            document.getElementById(`propina-input-${orderId}`).value = tipAmount;
+        }
     </script>
 </body>
 

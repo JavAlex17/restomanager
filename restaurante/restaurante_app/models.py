@@ -103,6 +103,8 @@ class Pedido(models.Model):
     ('CANCELADO', 'Cancelado'),)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='PENDIENTE')
     monto_total = models.IntegerField(default=0)
+    propina = models.IntegerField(default=0, help_text="Monto de la propina añadida al pedido")
+
     def __str__(self):
         return f"Pedido #{self.id} - {self.usuario.username} - {self.estado}"
     def actualizar_monto(self):

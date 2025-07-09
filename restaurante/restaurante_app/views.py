@@ -548,12 +548,22 @@ def actualizar_estado_pedido_view(request, pedido_id):
         
         if nuevo_estado in ['ENTREGADO', 'CANCELADO', 'PENDIENTE', 'PAGADO']:
             pedido.estado = nuevo_estado
+            
+            if nuevo_estado == 'PAGADO':
+                propina_str = request.POST.get('propina', '0')
+                try:
+                    propina = int(float(propina_str))
+                    pedido.propina = propina
+                except (ValueError, TypeError):
+                    messages.error(request, 'El monto de la propina no es válido.')
+                    return redirect('pedidos_camarero')
+            
             pedido.save()
             messages.success(request, f'El pedido #{pedido.id} ha sido actualizado a {pedido.get_estado_display()}.')
         else:
             messages.error(request, 'El estado seleccionado no es válido.')
 
-        return redirect('pedidos_camarero')
+    return redirect('pedidos_camarero')
 
 
 

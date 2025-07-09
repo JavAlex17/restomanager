@@ -99,12 +99,8 @@ class TurnoForm(forms.ModelForm):
         }
     
     def clean_fecha_inicio(self):
-        """
-        Valida que la fecha de inicio no sea anterior al día y hora actuales.
-        """
         fecha_inicio = self.cleaned_data.get('fecha_inicio')
         
-        # Comparamos solo si la fecha no está vacía
         if fecha_inicio and fecha_inicio < timezone.now():
             raise forms.ValidationError("La fecha de inicio del turno no puede ser en el pasado.")
             
@@ -135,7 +131,7 @@ class PromocionForm(forms.ModelForm):
             'nombre', 'descripcion', 'tipo_descuento', 'valor_descuento', 
             'productos_afectados', 'fecha_inicio', 'fecha_fin', 'activa'
         ]
-        #Se definen los widgets para que Django renderice los campos con el tipo y estilo correctos.
+        #Widgets para los campos del formulario 
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm'}),
             'descripcion': forms.Textarea(attrs={'rows': 3, 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm'}),
@@ -145,7 +141,7 @@ class PromocionForm(forms.ModelForm):
             'fecha_inicio': forms.DateInput(attrs={'type': 'date', 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm'}),
             'fecha_fin': forms.DateInput(attrs={'type': 'date', 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm'}),
         }
-        # Se puede añadir help_texts aquí también si se prefiere
+        
         help_texts = {
             'productos_afectados': 'Mantén presionada la tecla Ctrl (o Cmd en Mac) para seleccionar varios productos.',
             'activa': 'Desmarca esta casilla para desactivar la promoción temporalmente.'
@@ -159,7 +155,8 @@ class PromocionForm(forms.ModelForm):
 
     def clean_fecha_inicio(self):
         fecha_inicio = self.cleaned_data.get('fecha_inicio')
-        if fecha_inicio and fecha_inicio < timezone.now().date():
+        
+        if not self.instance.pk and fecha_inicio and fecha_inicio < timezone.now().date():
             raise ValidationError("La fecha de inicio no puede ser una fecha pasada.", code='past_date')
         return fecha_inicio
 
@@ -168,7 +165,6 @@ class PromocionForm(forms.ModelForm):
         fecha_inicio = cleaned_data.get("fecha_inicio")
         fecha_fin = cleaned_data.get("fecha_fin")
 
-        # Valida que la fecha de fin no sea anterior a la de inicio.
         if fecha_inicio and fecha_fin and fecha_fin < fecha_inicio:
             self.add_error('fecha_fin', "La fecha de finalización no puede ser anterior a la fecha de inicio.")
             

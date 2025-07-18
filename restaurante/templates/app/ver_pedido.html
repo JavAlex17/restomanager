@@ -105,7 +105,6 @@
                         <span class="text-lg font-bold text-grisOscuro">Total a Pagar:</span>
                         <span class="text-2xl font-extrabold text-primario ml-2">${{ total_final|punto_mil }}</span>
                     </div>
-                    <!-- CAMBIO: Este botón ahora abre el modal -->
                     <button type="button" id="openConfirmModalBtn" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">
                         Confirmar y Enviar
                     </button>
@@ -122,7 +121,7 @@
 
     <!-- Modales de Edición (uno por cada item) -->
     {% for item_id, item in pedido.items %}
-    <div id="modal-{{ item_id }}" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-30 hidden" onclick="closeModal(this, event)" data-base-price="{{ item.producto.precio }}" data-item-id="{{ item_id }}">
+    <div id="modal-{{ item_id }}" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-30 hidden" onclick="closeModal(this, event)" data-base-price="{% if item.precio_original_unitario > item.precio_unitario %}{{ item.precio_unitario }}{% else %}{{ item.producto.precio }}{% endif %}" data-item-id="{{ item_id }}">
         <div class="modal-container bg-white rounded-lg shadow-xl w-full max-w-lg transform transition-all">
             <form action="{% url 'actualizar_item_pedido' item_id %}" method="post">
                 {% csrf_token %}
@@ -166,7 +165,6 @@
             <p class="text-sm text-gray-600 mb-6">¿Estás seguro de que quieres enviar este pedido a la cocina? No podrás modificarlo después.</p>
             <div class="flex justify-end space-x-4">
                 <button id="cancelConfirmBtn" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancelar</button>
-                <!-- Este formulario se envía al confirmar -->
                 <form id="confirmOrderForm" action="{% url 'confirmar_pedido' %}" method="post" class="inline">
                     {% csrf_token %}
                     <button id="confirmOrderBtn" type="submit" class="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700">Enviar a Cocina</button>
@@ -183,13 +181,16 @@
             modal.classList.remove('hidden');
             updateModalPrice(modal.querySelector('input[name="cantidad"]'));
         }
+
         function closeModal(modal, event) {
             if (event.target === modal) { modal.classList.add('hidden'); }
         }
+
         function closeModalByButton(button) {
             const modal = button.closest('.modal-overlay');
             if (modal) { modal.classList.add('hidden'); }
         }
+
         function changeQuantity(button, amount) {
             const input = button.parentElement.querySelector('input[name="cantidad"]');
             let newValue = parseInt(input.value) + amount;
@@ -197,19 +198,29 @@
             input.value = newValue;
             updateModalPrice(input);
         }
+
         function updateModalPrice(element) {
             const modal = element.closest('.modal-overlay');
             if (!modal) return;
+
             const itemId = modal.dataset.itemId;
             const basePrice = parseFloat(modal.dataset.basePrice);
             const quantity = parseInt(modal.querySelector('input[name="cantidad"]').value);
             const priceDisplay = modal.querySelector(`#price-display-${itemId}`);
+
+            if (isNaN(basePrice)) {
+                priceDisplay.textContent = '$Error';
+                console.error("Error: basePrice is NaN for item ID:", itemId);
+                return;
+            }
+
             let extraCost = 0;
             modal.querySelectorAll('input[name="ingredientes"]').forEach(checkbox => {
                 if (checkbox.checked && checkbox.dataset.base === 'false') {
                     extraCost += parseFloat(checkbox.dataset.price);
                 }
             });
+
             const finalPricePerUnit = basePrice + extraCost;
             const totalPrice = finalPricePerUnit * quantity;
 
@@ -230,7 +241,6 @@
                     modal.classList.add('hidden');
                 });
 
-                // Cierra el modal si se hace click fuera
                 modal.addEventListener('click', (e) => {
                     if (e.target === modal) {
                         modal.classList.add('hidden');

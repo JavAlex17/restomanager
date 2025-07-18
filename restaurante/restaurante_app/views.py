@@ -615,28 +615,32 @@ def eliminar_turno_view(request, turno_id):
 def reporte_ventas_view(request):
     periodo = request.GET.get('periodo', 'hoy')
     
-    hoy = timezone.now().date()
-    # Lógica para definir fecha_inicio y fecha_fin (sin cambios)
+    now = timezone.now() 
+
+
     if periodo == 'semana':
-        fecha_inicio = hoy - timedelta(days=hoy.weekday())
-        fecha_fin = fecha_inicio + timedelta(days=7)
+        start_of_week = now - timedelta(days=now.weekday())
+        fecha_inicio = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
+        fecha_fin = fecha_inicio + timedelta(days=7) - timedelta(microseconds=1)
+    
     elif periodo == 'mes':
-        fecha_inicio = hoy.replace(day=1)
-        fecha_fin = (fecha_inicio + timedelta(days=32)).replace(day=1)
+        fecha_inicio = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        next_month = (fecha_inicio + timedelta(days=32)).replace(day=1)
+        fecha_fin = next_month - timedelta(microseconds=1)
+
     elif periodo == 'año':
-        fecha_inicio = hoy.replace(month=1, day=1)
-        fecha_fin = hoy.replace(year=hoy.year + 1, month=1, day=1)
+        fecha_inicio = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        fecha_fin = fecha_inicio.replace(year=fecha_inicio.year + 1) - timedelta(microseconds=1)
+        
     else: 
-        fecha_inicio = hoy
-        fecha_fin = hoy + timedelta(days=1)
+        fecha_inicio = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        fecha_fin = fecha_inicio + timedelta(days=1) - timedelta(microseconds=1)
 
     pedidos_pagados = Pedido.objects.filter(
         estado='PAGADO', 
-        fecha_hora__gte=fecha_inicio, 
-        fecha_hora__lt=fecha_fin
+        fecha_hora__range=(fecha_inicio, fecha_fin)
     )
     
-    # Cálculos de métricas (sin cambios)
     total_ventas = pedidos_pagados.aggregate(Sum('monto_total'))['monto_total__sum'] or 0
     num_pedidos = pedidos_pagados.count()
     ticket_promedio = total_ventas / num_pedidos if num_pedidos > 0 else 0
@@ -645,7 +649,6 @@ def reporte_ventas_view(request):
         .annotate(total_vendido=Sum('cantidad'))
         .order_by('-total_vendido')[:5])
 
-    # Lógica para agrupar ventas por día (sin cambios)
     ventas_por_dia = (pedidos_pagados
         .annotate(dia=TruncDate('fecha_hora'))
         .values('dia')
@@ -663,10 +666,7 @@ def reporte_ventas_view(request):
         'top_productos': top_productos,
         'periodo_seleccionado': periodo,
         'fecha_inicio': fecha_inicio,
-        'fecha_fin': fecha_fin - timedelta(days=1),
-        
-        # --- PARTE CLAVE CORREGIDA ---
-        # Convertimos las listas de Python a un string con formato JSON
+        'fecha_fin': fecha_fin,
         'chart_labels': json.dumps(chart_labels),
         'chart_data': json.dumps(chart_data),
     }
